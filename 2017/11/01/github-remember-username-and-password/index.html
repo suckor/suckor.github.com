@@ -8,17 +8,17 @@
   <link rel="dns-prefetch" href="//suckor.github.io">
   <title>github免用户名密码提交 | Suckor的博客</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta name="description" content="github免用户名密码提交在利用hexo+github搭建个人博客时，发布自己的博客时即执行hexo clean  &amp;amp;&amp;amp; hexo g &amp;amp;&amp;amp; hexo d时，要不断重复的输入自己的账户和密码是一个很不友好的体验。遂希望可以规避该问题。百度之，发现可以通过设置ssh key来规避该问题。不过感觉设置ssh key还是比较复杂的一种方案。遂又百度之，发现一种较为简单的">
+  <meta name="description" content="在利用hexo+github搭建个人博客时，发布自己的博客时即执行hexo clean  &amp;amp;&amp;amp; hexo g &amp;amp;&amp;amp; hexo d时，要不断重复的输入自己的账户和密码是一个很不友好的体验。遂希望可以规避该问题。百度之，发现可以通过设置ssh key来规避该问题。不过感觉设置ssh key还是比较复杂的一种方案。遂又百度之，发现一种较为简单的方案，分享之。 git co">
 <meta name="keywords" content="github,skill">
 <meta property="og:type" content="article">
 <meta property="og:title" content="github免用户名密码提交">
 <meta property="og:url" content="//suckor.github.io/2017/11/01/github-remember-username-and-password/index.html">
 <meta property="og:site_name" content="Suckor的博客">
-<meta property="og:description" content="github免用户名密码提交在利用hexo+github搭建个人博客时，发布自己的博客时即执行hexo clean  &amp;amp;&amp;amp; hexo g &amp;amp;&amp;amp; hexo d时，要不断重复的输入自己的账户和密码是一个很不友好的体验。遂希望可以规避该问题。百度之，发现可以通过设置ssh key来规避该问题。不过感觉设置ssh key还是比较复杂的一种方案。遂又百度之，发现一种较为简单的">
-<meta property="og:updated_time" content="2017-11-01T10:05:04.787Z">
+<meta property="og:description" content="在利用hexo+github搭建个人博客时，发布自己的博客时即执行hexo clean  &amp;amp;&amp;amp; hexo g &amp;amp;&amp;amp; hexo d时，要不断重复的输入自己的账户和密码是一个很不友好的体验。遂希望可以规避该问题。百度之，发现可以通过设置ssh key来规避该问题。不过感觉设置ssh key还是比较复杂的一种方案。遂又百度之，发现一种较为简单的方案，分享之。 git co">
+<meta property="og:updated_time" content="2017-11-01T10:07:50.671Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="github免用户名密码提交">
-<meta name="twitter:description" content="github免用户名密码提交在利用hexo+github搭建个人博客时，发布自己的博客时即执行hexo clean  &amp;amp;&amp;amp; hexo g &amp;amp;&amp;amp; hexo d时，要不断重复的输入自己的账户和密码是一个很不友好的体验。遂希望可以规避该问题。百度之，发现可以通过设置ssh key来规避该问题。不过感觉设置ssh key还是比较复杂的一种方案。遂又百度之，发现一种较为简单的">
+<meta name="twitter:description" content="在利用hexo+github搭建个人博客时，发布自己的博客时即执行hexo clean  &amp;amp;&amp;amp; hexo g &amp;amp;&amp;amp; hexo d时，要不断重复的输入自己的账户和密码是一个很不友好的体验。遂希望可以规避该问题。百度之，发现可以通过设置ssh key来规避该问题。不过感觉设置ssh key还是比较复杂的一种方案。遂又百度之，发现一种较为简单的方案，分享之。 git co">
   
     <link rel="alternative" href="/atom.xml" title="Suckor的博客" type="application/atom+xml">
   
@@ -174,7 +174,7 @@
     
     <div class="article-entry" itemprop="articleBody">
       
-        <h1 id="github免用户名密码提交"><a href="#github免用户名密码提交" class="headerlink" title="github免用户名密码提交"></a>github免用户名密码提交</h1><p>在利用hexo+github搭建个人博客时，发布自己的博客时即执行<code>hexo clean  &amp;&amp; hexo g &amp;&amp; hexo d</code>时，要不断重复的输入自己的账户和密码是一个很不友好的体验。遂希望可以规避该问题。百度之，发现可以通过设置ssh key来规避该问题。不过感觉设置ssh key还是比较复杂的一种方案。遂又百度之，发现一种较为简单的方案，分享之。</p>
+        <p>在利用hexo+github搭建个人博客时，发布自己的博客时即执行<code>hexo clean  &amp;&amp; hexo g &amp;&amp; hexo d</code>时，要不断重复的输入自己的账户和密码是一个很不友好的体验。遂希望可以规避该问题。百度之，发现可以通过设置ssh key来规避该问题。不过感觉设置ssh key还是比较复杂的一种方案。遂又百度之，发现一种较为简单的方案，分享之。</p>
 <p><code>git config</code>一般可以用于设置git的全局变量，该方法主要通过该命令进行设置，帮助文档可通过<code>git help config</code>获取。</p>
 <p>执行命令：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">git config --global credential.helper store</div></pre></td></tr></table></figure><br>该命令的相关说明见下<br><figure class="highlight plain"><figcaption><span>git help credentials</span></figcaption><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">SYNOPSIS</div><div class="line">       git config credential.https://example.com.username myusername</div><div class="line">       git config credential.helper &quot;$helper $options&quot;</div><div class="line"></div><div class="line">DESCRIPTION</div><div class="line">       Git will sometimes need credentials from the user in order to perform operations; for example, it may need to ask for a username and password in order to access a remote repository over HTTP.</div><div class="line">       This manual describes the mechanisms Git uses to request these credentials, as well as some features to avoid inputting these credentials repeatedly.</div></pre></td></tr></table></figure><br>这一步会在用户目录下的.gitconfig文件最后添加:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">[credential]</div><div class="line">    helper = store</div></pre></td></tr></table></figure></p>
 <p>现在push你的代码 (git push)或者执行<code>hexo clean  &amp;&amp; hexo g &amp;&amp; hexo d</code>, 这时会让你输入用户名密码, 这一步输入的用户名密码会被记住, 下次再push代码时就不用输入用户名密码啦!</p>
