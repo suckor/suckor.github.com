@@ -180,7 +180,7 @@
       
         <h2 id="BLAS"><a href="#BLAS" class="headerlink" title="BLAS"></a>BLAS</h2><p>在介绍GotoBLAS2之前，我们需要先了解一下BLAS（Basic Linear Algebra Subprograms），以下是百度百科以及wiki对BLAS做出的定义。<br><blockquote><p>BLAS（Basic Linear Algebra Subprograms）即基础线性代数子程序库，里面拥有大量已经编写好的关于线性代数运算的程序。</p>
 <footer><strong>BLAS</strong><cite><a href="https://baike.baidu.com/item/blas/6585139?fr=aladdin" target="_blank" rel="external">百度百科</a></cite></footer></blockquote><br><blockquote><p>Basic Linear Algebra Subprograms (BLAS) is a specification that prescribes a set of low-level routines for performing common linear algebra operations such as vector addition, scalar multiplication, dot products, linear combinations, and matrix multiplication. They are the de facto standard low-level routines for linear algebra libraries; the routines have bindings for both C and Fortran. Although the BLAS specification is general, BLAS implementations are often optimized for speed on a particular machine, so using them can bring substantial performance benefits. BLAS implementations will take advantage of special floating point hardware such as vector registers or SIMD instructions.</p>
-<footer><strong>Basic Linear Algebra Subprograms</strong><cite><a href="https://en.wikipedia.org/wiki/Basic_Linear_Algebra_Subprograms" target="_blank" rel="external">wikipedia</a></cite></footer></blockquote></p>
+<footer><strong>Basic Linear Algebra Subprograms</strong><cite><a href="https://en.wikipedia.org/wiki/Basic_Linear_Algebra_Subprograms" target="_blank" rel="external">wikipedia</a></cite></footer></blockquote><br>通过以上两种定义我们可以得到这样的认知，BLAS其实就是定义统一的接口标准来进行矩阵操作。它有多种实现包，其中常用的包括ATLAS，Intel MKL，GotoBLAS以及OpenBLAS等等。<br>BLAS支持四种浮点格式的运算：单精度实数（REAL），双精度实数（DOUBLE），单精度复数（COMPLEX）和双精度复数（COMPLEX<em>16）。对应子程序的首字母分别为S,D,C和Z。<br>根据被定义和发布的时间顺序以及计算的时间复杂度，BLAS被定义为三种<em>*级别</em></em>（level）的子程序。<br>level 1主要针对向量之间的操作，其中定义了1979年的BLAS初始文稿中描述的所有子程序，包括向量的点乘，范数以及通常意义上的向量加法。向量加法的一般描述如下：<br>$$\pmb{y} \leftarrow a\pmb{x}+\pmb{y}$$<br>其中，a为常量，$x,y$为向量。<br>level 2主要针对的是向量与矩阵之间的操作，</p>
 
       
 
@@ -486,19 +486,19 @@ getOwnMetadataKeys:function(t){return o(i(t),arguments.length<2?void 0:u(argumen
           <ul class="article-tag-list" q-show="showTags">
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">github</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color1">skill</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color5">matrix optimization</a>
               </li>
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color5">algorithm</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color2">github</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color1">skill</a>
               </li>
             
             <div class="clearfix"></div>
