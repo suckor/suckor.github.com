@@ -6,19 +6,21 @@
   <meta name="renderer" content="webkit">
   <meta http-equiv="X-UA-Compatible" content="IE=edge" >
   <link rel="dns-prefetch" href="//suckor.github.io">
-  <title>矩阵优化库GotoBLAS2的使用和分析 | Suckor的博客</title>
+  <title>矩阵优化库GotoBLAS2的使用和分析（1） - BLAS简介 | Suckor的博客</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
   <meta name="description" content="BLAS在介绍GotoBLAS2之前，我们需要先了解一下BLAS（Basic Linear Algebra Subprograms），以下是百度百科以及wiki对BLAS做出的定义。BLAS（Basic Linear Algebra Subprograms）即基础线性代数子程序库，里面拥有大量已经编写好的关于线性代数运算的程序。 BLAS百度百科Basic Linear Algebra Subpr">
 <meta name="keywords" content="matrix optimization,algorithm">
 <meta property="og:type" content="article">
-<meta property="og:title" content="矩阵优化库GotoBLAS2的使用和分析">
-<meta property="og:url" content="//suckor.github.io/2017/11/01/Gotoblas2-library-use-and-analysis/index.html">
+<meta property="og:title" content="矩阵优化库GotoBLAS2的使用和分析（1） - BLAS简介">
+<meta property="og:url" content="//suckor.github.io/2017/11/02/Gotoblas2-library-use-and-analysis-1/index.html">
 <meta property="og:site_name" content="Suckor的博客">
 <meta property="og:description" content="BLAS在介绍GotoBLAS2之前，我们需要先了解一下BLAS（Basic Linear Algebra Subprograms），以下是百度百科以及wiki对BLAS做出的定义。BLAS（Basic Linear Algebra Subprograms）即基础线性代数子程序库，里面拥有大量已经编写好的关于线性代数运算的程序。 BLAS百度百科Basic Linear Algebra Subpr">
-<meta property="og:updated_time" content="2017-11-02T01:56:04.612Z">
+<meta property="og:image" content="//suckor.github.io/2017/11/02/Gotoblas2-library-use-and-analysis-1/blas-functions.png">
+<meta property="og:updated_time" content="2017-11-02T09:07:33.136Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="矩阵优化库GotoBLAS2的使用和分析">
+<meta name="twitter:title" content="矩阵优化库GotoBLAS2的使用和分析（1） - BLAS简介">
 <meta name="twitter:description" content="BLAS在介绍GotoBLAS2之前，我们需要先了解一下BLAS（Basic Linear Algebra Subprograms），以下是百度百科以及wiki对BLAS做出的定义。BLAS（Basic Linear Algebra Subprograms）即基础线性代数子程序库，里面拥有大量已经编写好的关于线性代数运算的程序。 BLAS百度百科Basic Linear Algebra Subpr">
+<meta name="twitter:image" content="//suckor.github.io/2017/11/02/Gotoblas2-library-use-and-analysis-1/blas-functions.png">
   
     <link rel="alternative" href="/atom.xml" title="Suckor的博客" type="application/atom+xml">
   
@@ -158,20 +160,20 @@
             <canvas data-colors="#eaeaea" data-sectionHeight="100" data-contentId="js-content" id="myCanvas1" class="anm-canvas"></canvas>
           </div>
           <div id="js-content" class="content-ll">
-            <article id="post-Gotoblas2-library-use-and-analysis" class="article article-type-post " itemscope itemprop="blogPost">
+            <article id="post-Gotoblas2-library-use-and-analysis-1" class="article article-type-post " itemscope itemprop="blogPost">
   <div class="article-inner">
     
       <header class="article-header">
         
   
     <h1 class="article-title" itemprop="name">
-      矩阵优化库GotoBLAS2的使用和分析
+      矩阵优化库GotoBLAS2的使用和分析（1） - BLAS简介
     </h1>
   
 
         
-        <a href="/2017/11/01/Gotoblas2-library-use-and-analysis/" class="archive-article-date">
-  	<time datetime="2017-11-01T10:42:17.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2017-11-01</time>
+        <a href="/2017/11/02/Gotoblas2-library-use-and-analysis-1/" class="archive-article-date">
+  	<time datetime="2017-11-02T08:59:37.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2017-11-02</time>
 </a>
         
       </header>
@@ -181,7 +183,10 @@
         <h2 id="BLAS"><a href="#BLAS" class="headerlink" title="BLAS"></a>BLAS</h2><p>在介绍GotoBLAS2之前，我们需要先了解一下BLAS（Basic Linear Algebra Subprograms），以下是百度百科以及wiki对BLAS做出的定义。<br><blockquote><p>BLAS（Basic Linear Algebra Subprograms）即基础线性代数子程序库，里面拥有大量已经编写好的关于线性代数运算的程序。</p>
 <footer><strong>BLAS</strong><cite><a href="https://baike.baidu.com/item/blas/6585139?fr=aladdin" target="_blank" rel="external">百度百科</a></cite></footer></blockquote><br><blockquote><p>Basic Linear Algebra Subprograms (BLAS) is a specification that prescribes a set of low-level routines for performing common linear algebra operations such as vector addition, scalar multiplication, dot products, linear combinations, and matrix multiplication. They are the de facto standard low-level routines for linear algebra libraries; the routines have bindings for both C and Fortran. Although the BLAS specification is general, BLAS implementations are often optimized for speed on a particular machine, so using them can bring substantial performance benefits. BLAS implementations will take advantage of special floating point hardware such as vector registers or SIMD instructions.</p>
 <footer><strong>Basic Linear Algebra Subprograms</strong><cite><a href="https://en.wikipedia.org/wiki/Basic_Linear_Algebra_Subprograms" target="_blank" rel="external">wikipedia</a></cite></footer></blockquote><br>通过以上两种定义我们可以得到这样的认知，BLAS其实就是定义统一的接口标准来进行矩阵操作。它有多种实现包，其中常用的包括ATLAS，Intel MKL，GotoBLAS以及OpenBLAS等等。<br>BLAS支持四种浮点格式的运算：单精度实数（REAL），双精度实数（DOUBLE），单精度复数（COMPLEX）和双精度复数（COMPLEX*16）。对应子程序的首字母分别为S,D,C和Z。<br>根据被定义和发布的时间顺序以及计算的时间复杂度，BLAS被定义为三种<strong>级别</strong>（level）的子程序。<br>level 1主要针对向量之间的操作，其中定义了1979年的BLAS初始文稿中描述的所有子程序，包括向量的点乘，范数以及通常意义上的向量加法。向量加法的一般描述如下：</p>
-<script type="math/tex; mode=display">\pmb{y} \leftarrow a\pmb{x}+\pmb{y}</script><p>其中，a为常量，$x,y$为向量。<br>level 2主要针对的是向量与矩阵之间的操作，</p>
+<script type="math/tex; mode=display">\pmb{y} \leftarrow a\pmb{x}+\pmb{y}</script><p>其中，a为常量，$x,y$为向量。level 1的时间复杂度为$O(n)$<br>level 2的设计始于1984年，发表于1988年，主要针对的是向量与矩阵之间的操作，时间复杂度一般为$O(n^2)$。其中较一般的的矩阵向量乘法（gemv）的定义如下式：</p>
+<script type="math/tex; mode=display">{\pmb {y}}\leftarrow \alpha {\pmb {A}}{\pmb {x}}+\beta {\pmb {y}}</script><p>level 3发表于1990年，主要针对矩阵之间的操作，时间复杂度一般为$O(n^3)$，其中一般形式的矩阵乘法（gemm）的定义如下式：</p>
+<script type="math/tex; mode=display">{\pmb {C}}\leftarrow \alpha {\pmb {A}}{\pmb {B}}+\beta {\pmb {C}}</script><p>BLAS提供的三种level的函数接口列表见下图：<br><img src="/2017/11/02/Gotoblas2-library-use-and-analysis-1/blas-functions.png" title="This is an example image"></p>
+<p>至此，相信对BLAS也有了一定的初步的了解，接下来要说明的将是BLAS的一种实现，也就是我们标题中所说明的GotoBLAS2。详情可继续关注《矩阵优化库GotoBLAS2的使用和分析》系列呦。</p>
 
       
 
@@ -276,7 +281,7 @@
     <a class="close js-modal-close" href="javascript:;"><i class="icon icon-close"></i></a>
     <p>扫一扫，分享到微信</p>
     <div class="wx-qrcode">
-      <img src="http://s.jiathis.com/qrcode.php?url=http://suckor.github.io/2017/11/01/Gotoblas2-library-use-and-analysis/" alt="微信分享二维码">
+      <img src="http://s.jiathis.com/qrcode.php?url=http://suckor.github.io/2017/11/02/Gotoblas2-library-use-and-analysis-1/" alt="微信分享二维码">
     </div>
 </div>
 
@@ -440,19 +445,19 @@ MathJax.Hub.Queue(function() {
           <ul class="article-tag-list" q-show="showTags">
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">matrix optimization</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">algorithm</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color2">github</a>
               </li>
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color1">skill</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color5">matrix optimization</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color5">algorithm</a>
               </li>
             
             <div class="clearfix"></div>
