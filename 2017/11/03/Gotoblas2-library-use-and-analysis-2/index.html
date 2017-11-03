@@ -6,19 +6,19 @@
   <meta name="renderer" content="webkit">
   <meta http-equiv="X-UA-Compatible" content="IE=edge" >
   <link rel="dns-prefetch" href="//suckor.github.io">
-  <title>矩阵优化库GotoBLAS2的使用和分析（2） - GotoBLAS简介 | Suckor的博客</title>
+  <title>矩阵优化库GotoBLAS2的使用和分析（2） - GotoBLAS2使用 | Suckor的博客</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta name="description" content="GotoBLAS2是TACC（Texas Advanced Computing Center）发布的一款开源软件。主要开发者By Kazushige Goto &amp;#x6b;&amp;#103;&amp;#111;&amp;#116;&amp;#111;&amp;#x40;&amp;#x74;&amp;#97;&amp;#x63;&amp;#99;&amp;#46;&amp;#x75;&amp;#116;&amp;#101;&amp;#120;&amp;#97;&amp;#115;&amp;#x2e;&amp;#x65;&amp;#x64;&amp;#11">
+  <meta name="description" content="GotoBLAS2是TACC（Texas Advanced Computing Center）发布的一款开源软件。主要开发者By Kazushige Goto &amp;#x6b;&amp;#103;&amp;#x6f;&amp;#116;&amp;#111;&amp;#x40;&amp;#x74;&amp;#x61;&amp;#x63;&amp;#x63;&amp;#46;&amp;#x75;&amp;#116;&amp;#101;&amp;#x78;&amp;#x61;&amp;#115;&amp;#46;&amp;#x65;&amp;#x64;&amp;#">
 <meta name="keywords" content="matrix optimization,algorithm">
 <meta property="og:type" content="article">
-<meta property="og:title" content="矩阵优化库GotoBLAS2的使用和分析（2） - GotoBLAS简介">
+<meta property="og:title" content="矩阵优化库GotoBLAS2的使用和分析（2） - GotoBLAS2使用">
 <meta property="og:url" content="//suckor.github.io/2017/11/03/Gotoblas2-library-use-and-analysis-2/index.html">
 <meta property="og:site_name" content="Suckor的博客">
-<meta property="og:description" content="GotoBLAS2是TACC（Texas Advanced Computing Center）发布的一款开源软件。主要开发者By Kazushige Goto &amp;#x6b;&amp;#103;&amp;#111;&amp;#116;&amp;#111;&amp;#x40;&amp;#x74;&amp;#97;&amp;#x63;&amp;#99;&amp;#46;&amp;#x75;&amp;#116;&amp;#101;&amp;#120;&amp;#97;&amp;#115;&amp;#x2e;&amp;#x65;&amp;#x64;&amp;#11">
-<meta property="og:updated_time" content="2017-11-03T03:09:59.600Z">
+<meta property="og:description" content="GotoBLAS2是TACC（Texas Advanced Computing Center）发布的一款开源软件。主要开发者By Kazushige Goto &amp;#x6b;&amp;#103;&amp;#x6f;&amp;#116;&amp;#111;&amp;#x40;&amp;#x74;&amp;#x61;&amp;#x63;&amp;#x63;&amp;#46;&amp;#x75;&amp;#116;&amp;#101;&amp;#x78;&amp;#x61;&amp;#115;&amp;#46;&amp;#x65;&amp;#x64;&amp;#">
+<meta property="og:updated_time" content="2017-11-03T03:13:18.152Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="矩阵优化库GotoBLAS2的使用和分析（2） - GotoBLAS简介">
-<meta name="twitter:description" content="GotoBLAS2是TACC（Texas Advanced Computing Center）发布的一款开源软件。主要开发者By Kazushige Goto &amp;#x6b;&amp;#103;&amp;#111;&amp;#116;&amp;#111;&amp;#x40;&amp;#x74;&amp;#97;&amp;#x63;&amp;#99;&amp;#46;&amp;#x75;&amp;#116;&amp;#101;&amp;#120;&amp;#97;&amp;#115;&amp;#x2e;&amp;#x65;&amp;#x64;&amp;#11">
+<meta name="twitter:title" content="矩阵优化库GotoBLAS2的使用和分析（2） - GotoBLAS2使用">
+<meta name="twitter:description" content="GotoBLAS2是TACC（Texas Advanced Computing Center）发布的一款开源软件。主要开发者By Kazushige Goto &amp;#x6b;&amp;#103;&amp;#x6f;&amp;#116;&amp;#111;&amp;#x40;&amp;#x74;&amp;#x61;&amp;#x63;&amp;#x63;&amp;#46;&amp;#x75;&amp;#116;&amp;#101;&amp;#x78;&amp;#x61;&amp;#115;&amp;#46;&amp;#x65;&amp;#x64;&amp;#">
   
     <link rel="alternative" href="/atom.xml" title="Suckor的博客" type="application/atom+xml">
   
@@ -165,7 +165,7 @@
         
   
     <h1 class="article-title" itemprop="name">
-      矩阵优化库GotoBLAS2的使用和分析（2） - GotoBLAS简介
+      矩阵优化库GotoBLAS2的使用和分析（2） - GotoBLAS2使用
     </h1>
   
 
@@ -178,7 +178,7 @@
     
     <div class="article-entry" itemprop="articleBody">
       
-        <p>GotoBLAS2是TACC（Texas Advanced Computing Center）发布的一款开源软件。主要开发者By Kazushige Goto <a href="&#109;&#x61;&#105;&#x6c;&#116;&#x6f;&#x3a;&#x6b;&#103;&#111;&#116;&#111;&#x40;&#x74;&#97;&#x63;&#99;&#46;&#x75;&#116;&#101;&#120;&#97;&#115;&#x2e;&#x65;&#x64;&#117;">&#x6b;&#103;&#111;&#116;&#111;&#x40;&#x74;&#97;&#x63;&#99;&#46;&#x75;&#116;&#101;&#120;&#97;&#115;&#x2e;&#x65;&#x64;&#117;</a>自2010年更新了最后一个版本1.13就不在继续迭代更新了，不过技术社区还是可以继续使用，研究以及扩展。OpenBLAS就是一款基于GotoBLAS进行继续开发的开源优化库，而且社区直至目前也依然活跃。不过在此我们对其不做详细展开，有兴趣的可以自行了解。<br>本章主要介绍GotoBLAS2的安装以及基本使用方法。该库的一些特性如下：<br><blockquote><p>The library features optimal performance on the following platforms:</p>
+        <p>GotoBLAS2是TACC（Texas Advanced Computing Center）发布的一款开源软件。主要开发者By Kazushige Goto <a href="&#x6d;&#x61;&#x69;&#x6c;&#x74;&#x6f;&#58;&#x6b;&#103;&#x6f;&#116;&#111;&#x40;&#x74;&#x61;&#x63;&#x63;&#46;&#x75;&#116;&#101;&#x78;&#x61;&#115;&#46;&#x65;&#x64;&#117;">&#x6b;&#103;&#x6f;&#116;&#111;&#x40;&#x74;&#x61;&#x63;&#x63;&#46;&#x75;&#116;&#101;&#x78;&#x61;&#115;&#46;&#x65;&#x64;&#117;</a>自2010年更新了最后一个版本1.13就不在继续迭代更新了，不过技术社区还是可以继续使用，研究以及扩展。OpenBLAS就是一款基于GotoBLAS进行继续开发的开源优化库，而且社区直至目前也依然活跃。不过在此我们对其不做详细展开，有兴趣的可以自行了解。<br>本章主要介绍GotoBLAS2的安装以及基本使用方法。该库的一些特性如下：<br><blockquote><p>The library features optimal performance on the following platforms:</p>
 <ul>
 <li>Intel Nehalem and Atom systems</li>
 <li>VIA Nanoprocessor</li>
@@ -453,19 +453,19 @@ MathJax.Hub.Queue(function() {
           <ul class="article-tag-list" q-show="showTags">
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">github</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color1">skill</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color5">matrix optimization</a>
               </li>
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color5">algorithm</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color2">github</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color1">skill</a>
               </li>
             
             <div class="clearfix"></div>
