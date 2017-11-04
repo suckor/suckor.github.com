@@ -8,17 +8,22 @@
   <link rel="dns-prefetch" href="//suckor.github.io">
   <title>矩阵优化库GotoBLAS2的使用和分析（3） - GotoBLAS2优化算法分析 | Suckor的博客</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta name="description" content="前面两小结，分别说明了BLAS与GotoBLAS2的关系以及GotoBLAS2的使用方法，如果你仅仅是希望在你的程序中使用GotoBLAS2进行矩阵运算的优化，本小节就可以忽略了，前两节你应该已经得到了你想要的。本小节仅是本着知其然知其所以然的原则，向大家安利一下GotoBLAS2背后的故事。。 矩阵乘法的算法复杂度分析我们假设存在矩阵$A=(a{ij})$和$B=(b{ij})$的$n\time">
+  <meta name="description" content="前面两小结，分别说明了BLAS与GotoBLAS2的关系以及GotoBLAS2的使用方法，如果你仅仅是希望在你的程序中使用GotoBLAS2进行矩阵运算的优化，本小节就可以忽略了，前两节你应该已经得到了你想要的。本小节仅是本着知其然知其所以然的原则，向大家安利一下GotoBLAS2背后的故事。。 矩阵乘法的算法复杂度分析我们假设存在矩阵$A=a_{ij}$和$B=b_{ij}$的$n \times">
 <meta name="keywords" content="matrix optimization,algorithm">
 <meta property="og:type" content="article">
 <meta property="og:title" content="矩阵优化库GotoBLAS2的使用和分析（3） - GotoBLAS2优化算法分析">
 <meta property="og:url" content="//suckor.github.io/2017/11/03/Gotoblas2-library-use-and-analysis-3/index.html">
 <meta property="og:site_name" content="Suckor的博客">
-<meta property="og:description" content="前面两小结，分别说明了BLAS与GotoBLAS2的关系以及GotoBLAS2的使用方法，如果你仅仅是希望在你的程序中使用GotoBLAS2进行矩阵运算的优化，本小节就可以忽略了，前两节你应该已经得到了你想要的。本小节仅是本着知其然知其所以然的原则，向大家安利一下GotoBLAS2背后的故事。。 矩阵乘法的算法复杂度分析我们假设存在矩阵$A=(a{ij})$和$B=(b{ij})$的$n\time">
-<meta property="og:updated_time" content="2017-11-03T10:35:49.544Z">
+<meta property="og:description" content="前面两小结，分别说明了BLAS与GotoBLAS2的关系以及GotoBLAS2的使用方法，如果你仅仅是希望在你的程序中使用GotoBLAS2进行矩阵运算的优化，本小节就可以忽略了，前两节你应该已经得到了你想要的。本小节仅是本着知其然知其所以然的原则，向大家安利一下GotoBLAS2背后的故事。。 矩阵乘法的算法复杂度分析我们假设存在矩阵$A=a_{ij}$和$B=b_{ij}$的$n \times">
+<meta property="og:image" content="//suckor.github.io/2017/11/03/Gotoblas2-library-use-and-analysis-3/peformance-by-arch.png">
+<meta property="og:image" content="//suckor.github.io/2017/11/03/Gotoblas2-library-use-and-analysis-3/shape-of-gemm.png">
+<meta property="og:image" content="//suckor.github.io/2017/11/03/Gotoblas2-library-use-and-analysis-3/layered-of-gemm.png">
+<meta property="og:image" content="//suckor.github.io/2017/11/03/Gotoblas2-library-use-and-analysis-3/hierarchical-memories.png">
+<meta property="og:updated_time" content="2017-11-04T08:45:54.920Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="矩阵优化库GotoBLAS2的使用和分析（3） - GotoBLAS2优化算法分析">
-<meta name="twitter:description" content="前面两小结，分别说明了BLAS与GotoBLAS2的关系以及GotoBLAS2的使用方法，如果你仅仅是希望在你的程序中使用GotoBLAS2进行矩阵运算的优化，本小节就可以忽略了，前两节你应该已经得到了你想要的。本小节仅是本着知其然知其所以然的原则，向大家安利一下GotoBLAS2背后的故事。。 矩阵乘法的算法复杂度分析我们假设存在矩阵$A=(a{ij})$和$B=(b{ij})$的$n\time">
+<meta name="twitter:description" content="前面两小结，分别说明了BLAS与GotoBLAS2的关系以及GotoBLAS2的使用方法，如果你仅仅是希望在你的程序中使用GotoBLAS2进行矩阵运算的优化，本小节就可以忽略了，前两节你应该已经得到了你想要的。本小节仅是本着知其然知其所以然的原则，向大家安利一下GotoBLAS2背后的故事。。 矩阵乘法的算法复杂度分析我们假设存在矩阵$A=a_{ij}$和$B=b_{ij}$的$n \times">
+<meta name="twitter:image" content="//suckor.github.io/2017/11/03/Gotoblas2-library-use-and-analysis-3/peformance-by-arch.png">
   
     <link rel="alternative" href="/atom.xml" title="Suckor的博客" type="application/atom+xml">
   
@@ -175,9 +180,23 @@
     <div class="article-entry" itemprop="articleBody">
       
         <p>前面两小结，分别说明了BLAS与GotoBLAS2的关系以及GotoBLAS2的使用方法，如果你仅仅是希望在你的程序中使用GotoBLAS2进行矩阵运算的优化，本小节就可以忽略了，前两节你应该已经得到了你想要的。本小节仅是本着知其然知其所以然的原则，向大家安利一下GotoBLAS2背后的故事。。</p>
-<h2 id="矩阵乘法的算法复杂度分析"><a href="#矩阵乘法的算法复杂度分析" class="headerlink" title="矩阵乘法的算法复杂度分析"></a>矩阵乘法的算法复杂度分析</h2><p>我们假设存在矩阵$A=(a<em>{ij})$和$B=(b</em>{ij})$的$n\timesn$的方阵，定义乘积$C=AB$中的元素$c<em>{ij}$为：$$c</em>{ij}=\sum<em>{k=1}^na</em>{ik} \cdot b_{kj}$$由上式我们可以知道我们需要计算$n^2$个值，每个元素又是$n$个浮点数乘积的和，伪代码如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">n=A.rows</div><div class="line">let C be a new n*n matrix</div><div class="line">for i=1 to n</div><div class="line">	for j=1 to n</div><div class="line">		c&#123;i,j&#125;=0</div><div class="line">		for k = 1 to n</div><div class="line">			c&#123;i,j&#125;=c&#123;i,j&#125; + a&#123;i, k&#125;*b&#123;k,j&#125;</div><div class="line">return C</div></pre></td></tr></table></figure><br>由上述的伪码我们可以发现刚好存在三重循环，最内层循环内的操作仅花费常量的时间，故我们可以得出其时间复杂度为$O(n^3)$。</p>
+<h2 id="矩阵乘法的算法复杂度分析"><a href="#矩阵乘法的算法复杂度分析" class="headerlink" title="矩阵乘法的算法复杂度分析"></a>矩阵乘法的算法复杂度分析</h2><p>我们假设存在矩阵$A=a_{ij}$和$B=b_{ij}$的$n \times n$的方阵，定义乘积$C=A \cdot B$中的元素$c_{ij}$为：</p>
+<script type="math/tex; mode=display">c_{ij}=\sum_{k=1}^na_{ik} \cdot b_{kj}</script><p>由上式我们可以知道我们需要计算$n^2$个值，每个元素又是$n$个浮点数乘积的和，伪代码如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">n=A.rows</div><div class="line">let C be a new n*n matrix</div><div class="line">for i=1 to n</div><div class="line">	for j=1 to n</div><div class="line">		c&#123;i,j&#125;=0</div><div class="line">		for k = 1 to n</div><div class="line">			c&#123;i,j&#125;=c&#123;i,j&#125; + a&#123;i, k&#125;*b&#123;k,j&#125;</div><div class="line">return C</div></pre></td></tr></table></figure><br>由上述的伪码我们可以发现刚好存在三重循环，最内层循环内的操作仅花费常量的时间，故我们可以得出其时间复杂度为$O(n^3)$。</p>
 <p>有些同学应该知道还存在一种优化的计算方法<strong>strassen</strong>方法，通过精密的够造子矩阵将计算复杂度降低到$O(n^{lg7})$，到目前为止渐进复杂性最优的算法是由Coppersmith和Winograd提出的，时间复杂度在$O(n^{2.376})$。当然这种优化在实际应用中都存在着一些问题，也不是本文讨论的重点，此处就不做具体展开了，有兴趣的小伙伴可以翻翻《算法导论》那里面有你希望得到的答案。</p>
-<h2 id="GotoBLAS设计思想"><a href="#GotoBLAS设计思想" class="headerlink" title="GotoBLAS设计思想"></a>GotoBLAS设计思想</h2>
+<p>GotoBLAS2相关实现，并非是在算法复杂度上进行进一步优化和研究，它们的主要工作针对的是现代计算机的多级存储体系设计的简单而又高效的矩阵乘法操作的实现。</p>
+<h2 id="GotoBLAS设计思想"><a href="#GotoBLAS设计思想" class="headerlink" title="GotoBLAS设计思想"></a>GotoBLAS设计思想</h2><p>本文主要参考的是Goto, K.和van de Geigin, R.A.于2008发表的一篇论文《Anatomy of High-Performance Matrix Multiplication》。在具体介绍其基本设计思想和实现之前我们先来看一组多种BLAS实现在不同的处理器下的表现对比。<br><img src="/2017/11/03/Gotoblas2-library-use-and-analysis-3/peformance-by-arch.png" title="Comparison of the matrix-matrix multiplication described in GotoBLAS2 with various other implementations"><br>其中FLOPS为每秒浮点运算次数，主要用于评估电脑的计算性能。GFLOPS为每秒10亿次的浮点运算。从上图我们可以发现，GotoBLAS2和其他集中BLAS的实现在不同的处理器下均取得较为不错的性能，而且我们也可以认为其他集中BLAS的实现也做了和本文类似的优化策略。<br>下面我们针对GotoBLAS2的相关优化策略做详细介绍。</p>
+<h3 id="矩阵的划分"><a href="#矩阵的划分" class="headerlink" title="矩阵的划分"></a>矩阵的划分</h3><p>我们平时遇到的矩阵，一般都可以按照下面的方式划分为不同大小的块，假设存在$m \times n$的矩阵$X$,则我们可以按照行或者列划分为不同的小块。</p>
+<script type="math/tex; mode=display">X=(X_0|X_1|\cdots|X_{N-1})=\pmatrix{\frac{\frac{X'_0}{X'_1}}{\frac{\vdots}{X'_{M-1}}}}</script><p>其中$Column(X_j)=n_b$，$Row(X’_j)=m_b$($Column(X_{N-1})\leq n_b, Row(X’_{M-1})\leq m_b$)。<br>而根据行列size的大小，矩阵的乘法可以分为以下8种类型：<br><img src="/2017/11/03/Gotoblas2-library-use-and-analysis-3/shape-of-gemm.png" title="matrix-matrix product"><br>上图中最后一列，针对不同大小的矩阵乘法的类型分别给出一种标记，GE为GEneral，其他字母的含义如下：</p>
+<ul>
+<li><strong>B</strong>, <strong>B</strong>lock,表示矩阵的行和列的size均很小</li>
+<li><strong>P</strong>,<strong>P</strong>anel,表示矩阵的行和列其中一个值很小，另一个很大</li>
+<li><strong>M</strong>,<strong>M</strong>atrix,表示矩阵的行和列的size均很大或者大小未知</li>
+<li><strong>DOT</strong>, 表示乘积的目标矩阵的行和列的大小都很小<br>有了前面的知识，下面的矩阵的分解我们就很好理解了，按照矩阵不同的划分方式我们可以把一个一般的矩阵相乘，分解为以下六种不同的解法。<img src="/2017/11/03/Gotoblas2-library-use-and-analysis-3/layered-of-gemm.png" title="gemm layered">
+由上图我们可以发现，GEMM的计算首先被我们分解为GEPP，GEMP或者GEPM的计算，又进一步拆分为GEBP，GEPB或者GEPDOT的计算。这样我们就很容易看出只要最内层的三种操作GEBP,GEPB以及GEPDOT达到最佳的计算性能，GEMM同时就可以达到最佳性能。<br>从上面的拆分过程中，我们将优化GEMM转变成优化GEBP,GEPB以及GEPDOT的计算性能，下面我们主要以优化GEBP为例进行介绍其优化策略。<h3 id="性能分析"><a href="#性能分析" class="headerlink" title="性能分析"></a>性能分析</h3>在进行优化之前，我们需要先了解我们在进行矩阵运算时，时间都去哪儿了呢。下图是我们目前的计算机使用的多级存储结构图，左图为简化之后的多级存储结构，右图为实际的多级存储结构。<img src="/2017/11/03/Gotoblas2-library-use-and-analysis-3/hierarchical-memories.png" title="hierarchical memories arch">
+<blockquote><p>在一个计算机系统中，对存储器的容量、速度和价格这三个基本性能指标都有一定的要求。存储容量应确保各种应用的需要；存储器速度应尽量与CPU的速度相匹配并支持I/O操作；存储器的价格应比较合理。然而，这三者经常是互相矛盾的。例如存储器的速度越快，则每位的价格就越高；存储器的容量越大，则存储器的速度就越慢。按照目前的技术水平，仅仅采用一种技术组成单一的存储器是不可能同时满足这些要求的。只有采用由多级存储器组成的存储体系，把几种存储技术结合起来，才能较好地解决存储器大容量、高速度和低成本这三者之间的矛盾。</p>
+<footer><strong>多级存储体系,</strong><cite><a href="https://baike.baidu.com/item/%E5%A4%9A%E7%BA%A7%E5%AD%98%E5%82%A8%E4%BD%93%E7%B3%BB/4353951?fr=aladdin" target="_blank" rel="external">百度百科</a></cite></footer></blockquote></li>
+</ul>
+
       
 
       
