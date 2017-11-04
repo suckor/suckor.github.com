@@ -189,8 +189,14 @@
 <li><strong>DOT</strong>, 表示乘积的目标矩阵的行和列的大小都很小<br>有了前面的知识，下面的矩阵的分解我们就很好理解了，按照矩阵不同的划分方式我们可以把一个一般的矩阵相乘，分解为以下六种不同的解法。<img src="/2017/11/03/Gotoblas2-library-use-and-analysis-3/layered-of-gemm.png" title="gemm layered">
 由上图我们可以发现，GEMM的计算首先被我们分解为GEPP，GEMP或者GEPM的计算，又进一步拆分为GEBP，GEPB或者GEPDOT的计算。这样我们就很容易看出只要最内层的三种操作GEBP,GEPB以及GEPDOT达到最佳的计算性能，GEMM同时就可以达到最佳性能。<br>从上面的拆分过程中，我们将优化GEMM转变成优化GEBP,GEPB以及GEPDOT的计算性能，下面我们主要以优化GEBP为例进行介绍其优化策略。<h3 id="性能分析"><a href="#性能分析" class="headerlink" title="性能分析"></a>性能分析</h3>在进行优化之前，我们需要先了解我们在进行矩阵运算时，时间都去哪儿了呢。下图是我们目前的计算机使用的多级存储结构图，左图为简化之后的多级存储结构，右图为实际的多级存储结构。<img src="/2017/11/03/Gotoblas2-library-use-and-analysis-3/hierarchical-memories.png" title="hierarchical memories arch">
 <blockquote><p>在一个计算机系统中，对存储器的容量、速度和价格这三个基本性能指标都有一定的要求。存储容量应确保各种应用的需要；存储器速度应尽量与CPU的速度相匹配并支持I/O操作；存储器的价格应比较合理。然而，这三者经常是互相矛盾的。例如存储器的速度越快，则每位的价格就越高；存储器的容量越大，则存储器的速度就越慢。按照目前的技术水平，仅仅采用一种技术组成单一的存储器是不可能同时满足这些要求的。只有采用由多级存储器组成的存储体系，把几种存储技术结合起来，才能较好地解决存储器大容量、高速度和低成本这三者之间的矛盾。</p>
-<footer><strong>多级存储体系,</strong><cite><a href="https://baike.baidu.com/item/%E5%A4%9A%E7%BA%A7%E5%AD%98%E5%82%A8%E4%BD%93%E7%B3%BB/4353951?fr=aladdin" target="_blank" rel="external">百度百科</a></cite></footer></blockquote></li>
+<footer><strong>多级存储体系,</strong><cite><a href="https://baike.baidu.com/item/%E5%A4%9A%E7%BA%A7%E5%AD%98%E5%82%A8%E4%BD%93%E7%B3%BB/4353951?fr=aladdin" target="_blank" rel="external">百度百科</a></cite></footer></blockquote>
+通过以上的存储器结构我们可以发现，在我们进行矩阵计算时一部分时间花费在cpu的计算上，另一部分花费在数据的读取上（其实基本上所有的软件的处理时间大多都花费在两者身上），另外还有一些计算机的容错操作等，如TLB的更新等等。<br>首先我们考虑我们的简化的存储结构，如上左图所示。对于GEBP，我们假设$A\in R^{m_c \times k_c}, B\in R^{k_c\times n}, C\in R^{m_c\times n}$，并将$B, C$划分为$B=(B_0|B_1|\cdots|B_{N-1})$和$C=(C_0|C_1|\cdots|C_{N-1})$，这样我们就可以通过以下算法实现GEBP：<img src="/2017/11/03/Gotoblas2-library-use-and-analysis-3/basic-implementation-for-gebp.png" title="basic implementation for gebp">
+针对以上算法，我们假设：</li>
+<li>$m_c$和$k_c$足够小，保证$B_j$($B$的$n_r列$)，$C_j$($C$的$n_r列$)和$A$同时存在于Cache中。</li>
+<li>如果$A$，$B_j$和$C_j$均存在于Cache中，则$C_j := A\cdotB_j+C_j$将在CPU的峰值速度下被执行。</li>
+<li>$A$会一直存在于Cache中直到我们不在需要它。</li>
 </ul>
+<p>通过以上实现GEBP的伪码，我们我可得到更新$C$的过程中总共花费了$2m_c\times k_c\times n$次浮点数操作以及$m_c\times k_c+(2m_c×n+k_c\times n)$次内存移动操作。故我们可以得到两者之比为$\frac{2m_c\times k_c\times n}{m_c\times k_c+(2m_c\times n+k_c\times n)},一般存在$k_c&lt;&lt;n$故前式可以简化为$\frac{2m_ck_c}{2m_c+k_c}$。又因为在计算机系统中cpu的计算速度远远高于io的操作，为了获取更好的性能我们应尽量保证式\frac{2m_ck_c}{2m_c+k_c}能在上面的假设条件下取得最大值。该问题可以简化为在$m_c\times k_c\le K$的情况下，式$\frac{2m_ck_c}{2m_c+k_c}取得最大值，即可看做求一个矩形在什么情况下其周长最短，面积最大且存在约束$m_ck_c\le K$。可知$A$的形状最好是个正方形即$m_c==k_c$。</p>
 
       
 
@@ -268,7 +274,7 @@
     
     <div class="article-entry" itemprop="articleBody">
       
-        <p>GotoBLAS2是TACC（Texas Advanced Computing Center）发布的一款开源软件。主要开发者By Kazushige Goto <a href="&#x6d;&#97;&#x69;&#x6c;&#x74;&#111;&#x3a;&#x6b;&#103;&#x6f;&#116;&#x6f;&#x40;&#x74;&#x61;&#99;&#99;&#46;&#x75;&#116;&#101;&#120;&#x61;&#x73;&#46;&#x65;&#x64;&#117;">&#x6b;&#103;&#x6f;&#116;&#x6f;&#x40;&#x74;&#x61;&#99;&#99;&#46;&#x75;&#116;&#101;&#120;&#x61;&#x73;&#46;&#x65;&#x64;&#117;</a>自2010年更新了最后一个版本1.13就不在继续迭代更新了，不过技术社区还是可以继续使用，研究以及扩展。OpenBLAS就是一款基于GotoBLAS进行继续开发的开源优化库，而且社区直至目前也依然活跃。不过在此我们对其不做详细展开，有兴趣的可以自行了解。<br>本章主要介绍GotoBLAS2的安装以及基本使用方法。该库的一些特性如下：<br><blockquote><p>The library features optimal performance on the following platforms:</p>
+        <p>GotoBLAS2是TACC（Texas Advanced Computing Center）发布的一款开源软件。主要开发者By Kazushige Goto <a href="&#x6d;&#x61;&#x69;&#x6c;&#x74;&#111;&#58;&#107;&#x67;&#111;&#x74;&#x6f;&#64;&#116;&#97;&#99;&#99;&#46;&#x75;&#x74;&#x65;&#120;&#x61;&#x73;&#x2e;&#x65;&#100;&#x75;">&#107;&#x67;&#111;&#x74;&#x6f;&#64;&#116;&#97;&#99;&#99;&#46;&#x75;&#x74;&#x65;&#120;&#x61;&#x73;&#x2e;&#x65;&#100;&#x75;</a>自2010年更新了最后一个版本1.13就不在继续迭代更新了，不过技术社区还是可以继续使用，研究以及扩展。OpenBLAS就是一款基于GotoBLAS进行继续开发的开源优化库，而且社区直至目前也依然活跃。不过在此我们对其不做详细展开，有兴趣的可以自行了解。<br>本章主要介绍GotoBLAS2的安装以及基本使用方法。该库的一些特性如下：<br><blockquote><p>The library features optimal performance on the following platforms:</p>
 <ul>
 <li>Intel Nehalem and Atom systems</li>
 <li>VIA Nanoprocessor</li>
