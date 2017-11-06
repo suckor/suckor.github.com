@@ -12,19 +12,26 @@
 <meta name="keywords" content="matrix optimization,algorithm">
 <meta property="og:type" content="article">
 <meta property="og:title" content="矩阵优化库GotoBLAS2的使用和分析（3） - GotoBLAS2优化算法分析">
-<meta property="og:url" content="//suckor.github.io/2017/11/03/Gotoblas2-library-use-and-analysis-3/index.html">
+<meta property="og:url" content="//suckor.github.io/2017/11/06/Gotoblas2-library-use-and-analysis-3/index.html">
 <meta property="og:site_name" content="Suckor的博客">
 <meta property="og:description" content="前面两小结，分别说明了BLAS与GotoBLAS2的关系以及GotoBLAS2的使用方法，如果你仅仅是希望在你的程序中使用GotoBLAS2进行矩阵运算的优化，本小节就可以忽略了，前两节你应该已经得到了你想要的。本小节仅是本着知其然知其所以然的原则，向大家安利一下GotoBLAS2背后的故事。。 矩阵乘法的算法复杂度分析我们假设存在矩阵$A=a_{ij}$和$B=b_{ij}$的$n \times">
-<meta property="og:image" content="//suckor.github.io/2017/11/03/Gotoblas2-library-use-and-analysis-3/peformance-by-arch.png">
-<meta property="og:image" content="//suckor.github.io/2017/11/03/Gotoblas2-library-use-and-analysis-3/shape-of-gemm.png">
-<meta property="og:image" content="//suckor.github.io/2017/11/03/Gotoblas2-library-use-and-analysis-3/layered-of-gemm.png">
-<meta property="og:image" content="//suckor.github.io/2017/11/03/Gotoblas2-library-use-and-analysis-3/hierarchical-memories.png">
-<meta property="og:image" content="//suckor.github.io/2017/11/03/Gotoblas2-library-use-and-analysis-3/basic-implementation-for-gebp.png">
-<meta property="og:updated_time" content="2017-11-04T10:04:42.252Z">
+<meta property="og:image" content="//suckor.github.io/2017/11/06/Gotoblas2-library-use-and-analysis-3/peformance-by-arch.png">
+<meta property="og:image" content="//suckor.github.io/2017/11/06/Gotoblas2-library-use-and-analysis-3/shape-of-gemm.png">
+<meta property="og:image" content="//suckor.github.io/2017/11/06/Gotoblas2-library-use-and-analysis-3/layered-of-gemm.png">
+<meta property="og:image" content="//suckor.github.io/2017/11/06/Gotoblas2-library-use-and-analysis-3/hierarchical-memories.png">
+<meta property="og:image" content="//suckor.github.io/2017/11/06/Gotoblas2-library-use-and-analysis-3/basic-implementation-for-gebp.png">
+<meta property="og:image" content="//suckor.github.io/2017/11/06/Gotoblas2-library-use-and-analysis-3/gepp-by-gebp_opt1.png">
+<meta property="og:image" content="//suckor.github.io/2017/11/06/Gotoblas2-library-use-and-analysis-3/gepm-by-gebp.png">
+<meta property="og:image" content="//suckor.github.io/2017/11/06/Gotoblas2-library-use-and-analysis-3/gepp-by-gepb.png">
+<meta property="og:image" content="//suckor.github.io/2017/11/06/Gotoblas2-library-use-and-analysis-3/gemp-by-gepb.png">
+<meta property="og:image" content="//suckor.github.io/2017/11/06/Gotoblas2-library-use-and-analysis-3/gebp-l1.png">
+<meta property="og:image" content="//suckor.github.io/2017/11/06/Gotoblas2-library-use-and-analysis-3/gebp-l2.png">
+<meta property="og:image" content="//suckor.github.io/2017/11/06/Gotoblas2-library-use-and-analysis-3/param-of-archs.png">
+<meta property="og:updated_time" content="2017-11-06T10:47:06.981Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="矩阵优化库GotoBLAS2的使用和分析（3） - GotoBLAS2优化算法分析">
 <meta name="twitter:description" content="前面两小结，分别说明了BLAS与GotoBLAS2的关系以及GotoBLAS2的使用方法，如果你仅仅是希望在你的程序中使用GotoBLAS2进行矩阵运算的优化，本小节就可以忽略了，前两节你应该已经得到了你想要的。本小节仅是本着知其然知其所以然的原则，向大家安利一下GotoBLAS2背后的故事。。 矩阵乘法的算法复杂度分析我们假设存在矩阵$A=a_{ij}$和$B=b_{ij}$的$n \times">
-<meta name="twitter:image" content="//suckor.github.io/2017/11/03/Gotoblas2-library-use-and-analysis-3/peformance-by-arch.png">
+<meta name="twitter:image" content="//suckor.github.io/2017/11/06/Gotoblas2-library-use-and-analysis-3/peformance-by-arch.png">
   
     <link rel="alternative" href="/atom.xml" title="Suckor的博客" type="application/atom+xml">
   
@@ -172,8 +179,8 @@
   
 
         
-        <a href="/2017/11/03/Gotoblas2-library-use-and-analysis-3/" class="archive-article-date">
-  	<time datetime="2017-11-03T10:30:44.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2017-11-03</time>
+        <a href="/2017/11/06/Gotoblas2-library-use-and-analysis-3/" class="archive-article-date">
+  	<time datetime="2017-11-06T10:46:27.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2017-11-06</time>
 </a>
         
       </header>
@@ -185,24 +192,74 @@
 <script type="math/tex; mode=display">c_{ij}=\sum_{k=1}^na_{ik} \cdot b_{kj}</script><p>由上式我们可以知道我们需要计算$n^2$个值，每个元素又是$n$个浮点数乘积的和，伪代码如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">n=A.rows</div><div class="line">let C be a new n*n matrix</div><div class="line">for i=1 to n</div><div class="line">	for j=1 to n</div><div class="line">		c&#123;i,j&#125;=0</div><div class="line">		for k = 1 to n</div><div class="line">			c&#123;i,j&#125;=c&#123;i,j&#125; + a&#123;i, k&#125;*b&#123;k,j&#125;</div><div class="line">return C</div></pre></td></tr></table></figure><br>由上述的伪码我们可以发现刚好存在三重循环，最内层循环内的操作仅花费常量的时间，故我们可以得出其时间复杂度为$O(n^3)$。</p>
 <p>有些同学应该知道还存在一种优化的计算方法<strong>strassen</strong>方法，通过精密的够造子矩阵将计算复杂度降低到$O(n^{lg7})$，到目前为止渐进复杂性最优的算法是由Coppersmith和Winograd提出的，时间复杂度在$O(n^{2.376})$。当然这种优化在实际应用中都存在着一些问题，也不是本文讨论的重点，此处就不做具体展开了，有兴趣的小伙伴可以翻翻《算法导论》那里面有你希望得到的答案。</p>
 <p>GotoBLAS2相关实现，并非是在算法复杂度上进行进一步优化和研究，它们的主要工作针对的是现代计算机的多级存储体系设计的简单而又高效的矩阵乘法操作的实现。</p>
-<h2 id="GotoBLAS设计思想"><a href="#GotoBLAS设计思想" class="headerlink" title="GotoBLAS设计思想"></a>GotoBLAS设计思想</h2><p>本文主要参考的是Goto, K.和van de Geigin, R.A.于2008发表的一篇论文《Anatomy of High-Performance Matrix Multiplication》。在具体介绍其基本设计思想和实现之前我们先来看一组多种BLAS实现在不同的处理器下的表现对比。<br><img src="/2017/11/03/Gotoblas2-library-use-and-analysis-3/peformance-by-arch.png" title="Comparison of the matrix-matrix multiplication described in GotoBLAS2 with various other implementations"><br>其中FLOPS为每秒浮点运算次数，主要用于评估电脑的计算性能。GFLOPS为每秒10亿次的浮点运算。从上图我们可以发现，GotoBLAS2和其他集中BLAS的实现在不同的处理器下均取得较为不错的性能，而且我们也可以认为其他集中BLAS的实现也做了和本文类似的优化策略。<br>下面我们针对GotoBLAS2的相关优化策略做详细介绍。</p>
+<h2 id="GotoBLAS设计思想"><a href="#GotoBLAS设计思想" class="headerlink" title="GotoBLAS设计思想"></a>GotoBLAS设计思想</h2><p>本文主要参考的是Goto, K.和van de Geigin, R.A.于2008发表的一篇论文《Anatomy of High-Performance Matrix Multiplication》。在具体介绍其基本设计思想和实现之前我们先来看一组多种BLAS实现在不同的处理器下的表现对比。<br><img src="/2017/11/06/Gotoblas2-library-use-and-analysis-3/peformance-by-arch.png" title="Comparison of the matrix-matrix multiplication described in GotoBLAS2 with various other implementations"><br>其中FLOPS为每秒浮点运算次数，主要用于评估电脑的计算性能。GFLOPS为每秒10亿次的浮点运算。从上图我们可以发现，GotoBLAS2和其他集中BLAS的实现在不同的处理器下均取得较为不错的性能，而且我们也可以认为其他集中BLAS的实现也做了和本文类似的优化策略。<br>下面我们针对GotoBLAS2的相关优化策略做详细介绍。</p>
 <h3 id="矩阵的划分"><a href="#矩阵的划分" class="headerlink" title="矩阵的划分"></a>矩阵的划分</h3><p>我们平时遇到的矩阵，一般都可以按照下面的方式划分为不同大小的块，假设存在$m \times n$的矩阵$X$,则我们可以按照行或者列划分为不同的小块。</p>
-<script type="math/tex; mode=display">X=(X_0|X_1|\cdots|X_{N-1})=\pmatrix{\frac{\frac{X'_0}{X'_1}}{\frac{\vdots}{X'_{M-1}}}}</script><p>其中$Column(X_j)=n_b$，$Row(X’_j)=m_b$($Column(X_{N-1})\leq n_b, Row(X’_{M-1})\leq m_b$)。<br>而根据行列size的大小，矩阵的乘法可以分为以下8种类型：<br><img src="/2017/11/03/Gotoblas2-library-use-and-analysis-3/shape-of-gemm.png" title="matrix-matrix product"><br>上图中最后一列，针对不同大小的矩阵乘法的类型分别给出一种标记，GE为GEneral，其他字母的含义如下：</p>
+<script type="math/tex; mode=display">X=(X_0|X_1|\cdots|X_{N-1})=\pmatrix{\frac{\frac{X'_0}{X'_1}}{\frac{\vdots}{X'_{M-1}}}}</script><p>其中$Column(X_j)=n_b$，$Row(X’_j)=m_b$($Column(X_{N-1})\leq n_b, Row(X’_{M-1})\leq m_b$)。<br>而根据行列size的大小，矩阵的乘法可以分为以下8种类型：<br><img src="/2017/11/06/Gotoblas2-library-use-and-analysis-3/shape-of-gemm.png" title="matrix-matrix product"><br>上图中最后一列，针对不同大小的矩阵乘法的类型分别给出一种标记，GE为GEneral，其他字母的含义如下：</p>
 <ul>
 <li><strong>B</strong>, <strong>B</strong>lock,表示矩阵的行和列的size均很小</li>
 <li><strong>P</strong>,<strong>P</strong>anel,表示矩阵的行和列其中一个值很小，另一个很大</li>
 <li><strong>M</strong>,<strong>M</strong>atrix,表示矩阵的行和列的size均很大或者大小未知</li>
-<li><strong>DOT</strong>, 表示乘积的目标矩阵的行和列的大小都很小<br>有了前面的知识，下面的矩阵的分解我们就很好理解了，按照矩阵不同的划分方式我们可以把一个一般的矩阵相乘，分解为以下六种不同的解法。<img src="/2017/11/03/Gotoblas2-library-use-and-analysis-3/layered-of-gemm.png" title="gemm layered">
-由上图我们可以发现，GEMM的计算首先被我们分解为GEPP，GEMP或者GEPM的计算，又进一步拆分为GEBP，GEPB或者GEPDOT的计算。这样我们就很容易看出只要最内层的三种操作GEBP,GEPB以及GEPDOT达到最佳的计算性能，GEMM同时就可以达到最佳性能。<br>从上面的拆分过程中，我们将优化GEMM转变成优化GEBP,GEPB以及GEPDOT的计算性能，下面我们主要以优化GEBP为例进行介绍其优化策略。<h3 id="性能分析"><a href="#性能分析" class="headerlink" title="性能分析"></a>性能分析</h3>在进行优化之前，我们需要先了解我们在进行矩阵运算时，时间都去哪儿了呢。下图是我们目前的计算机使用的多级存储结构图，左图为简化之后的多级存储结构，右图为实际的多级存储结构。<img src="/2017/11/03/Gotoblas2-library-use-and-analysis-3/hierarchical-memories.png" title="hierarchical memories arch">
+<li><strong>DOT</strong>, 表示乘积的目标矩阵的行和列的大小都很小<br>有了前面的知识，下面的矩阵的分解我们就很好理解了，按照矩阵不同的划分方式我们可以把一个一般的矩阵相乘，分解为以下六种不同的解法。</li>
+</ul>
+<img src="/2017/11/06/Gotoblas2-library-use-and-analysis-3/layered-of-gemm.png" title="gemm layered">
+<p>由上图我们可以发现，GEMM的计算首先被我们分解为GEPP，GEMP或者GEPM的计算，又进一步拆分为GEBP，GEPB或者GEPDOT的计算。这样我们就很容易看出只要最内层的三种操作GEBP,GEPB以及GEPDOT达到最佳的计算性能，GEMM同时就可以达到最佳性能。<br>从上面的拆分过程中，我们将优化GEMM转变成优化GEBP,GEPB以及GEPDOT的计算性能，下面我们主要以优化GEBP为例进行介绍其优化策略。</p>
+<h3 id="性能分析"><a href="#性能分析" class="headerlink" title="性能分析"></a>性能分析</h3><p>在进行优化之前，我们需要先了解我们在进行矩阵运算时，时间都去哪儿了呢。下图是我们目前的计算机使用的多级存储结构图，左图为简化之后的多级存储结构，右图为实际的多级存储结构。</p>
+<img src="/2017/11/06/Gotoblas2-library-use-and-analysis-3/hierarchical-memories.png" title="hierarchical memories arch">
 <blockquote><p>在一个计算机系统中，对存储器的容量、速度和价格这三个基本性能指标都有一定的要求。存储容量应确保各种应用的需要；存储器速度应尽量与CPU的速度相匹配并支持I/O操作；存储器的价格应比较合理。然而，这三者经常是互相矛盾的。例如存储器的速度越快，则每位的价格就越高；存储器的容量越大，则存储器的速度就越慢。按照目前的技术水平，仅仅采用一种技术组成单一的存储器是不可能同时满足这些要求的。只有采用由多级存储器组成的存储体系，把几种存储技术结合起来，才能较好地解决存储器大容量、高速度和低成本这三者之间的矛盾。</p>
 <footer><strong>多级存储体系,</strong><cite><a href="https://baike.baidu.com/item/%E5%A4%9A%E7%BA%A7%E5%AD%98%E5%82%A8%E4%BD%93%E7%B3%BB/4353951?fr=aladdin" target="_blank" rel="external">百度百科</a></cite></footer></blockquote>
-通过以上的存储器结构我们可以发现，在我们进行矩阵计算时一部分时间花费在cpu的计算上，另一部分花费在数据的读取上（其实基本上所有的软件的处理时间大多都花费在两者身上），另外还有一些计算机的容错操作等，如TLB的更新等等。<br>首先我们考虑我们的简化的存储结构，如上左图所示。对于GEBP，我们假设$A\in R^{m_c \times k_c}, B\in R^{k_c\times n}, C\in R^{m_c\times n}$，并将$B, C$划分为$B=(B_0|B_1|\cdots|B_{N-1})$和$C=(C_0|C_1|\cdots|C_{N-1})$，这样我们就可以通过以下算法实现GEBP：<img src="/2017/11/03/Gotoblas2-library-use-and-analysis-3/basic-implementation-for-gebp.png" title="basic implementation for gebp">
-针对以上算法，我们假设：</li>
+<p>通过以上的存储器结构我们可以发现，在我们进行矩阵计算时一部分时间花费在cpu的计算上，另一部分花费在数据的读取上（其实基本上所有的软件的处理时间大多都花费在两者身上），另外还有一些计算机的容错操作等，如TLB的更新等等。<br>首先我们考虑我们的简化的存储结构，如上左图所示。对于GEBP，我们假设$A\in R^{m_c \times k_c}, B\in R^{k_c\times n}, C\in R^{m_c\times n}$，并将$B, C$划分为$B=(B_0|B_1|\cdots|B_{N-1})$和$C=(C_0|C_1|\cdots|C_{N-1})$，这样我们就可以通过以下算法实现GEBP：</p>
+<img src="/2017/11/06/Gotoblas2-library-use-and-analysis-3/basic-implementation-for-gebp.png" title="basic implementation for gebp">
+<p>针对以上算法，我们假设：</p>
+<ul>
 <li>$m_c$和$k_c$足够小，保证$B_j$($B$的$n_r列$)，$C_j$($C$的$n_r列$)和$A$同时存在于Cache中。</li>
-<li>如果$A$，$B_j$和$C_j$均存在于Cache中，则$C_j := A\cdotB_j+C_j$将在CPU的峰值速度下被执行。</li>
+<li>如果$A$，$B_j$和$C_j$均存在于Cache中，则$C_j := A\cdot B_j+C_j$将在CPU的峰值速度下被执行。</li>
 <li>$A$会一直存在于Cache中直到我们不在需要它。</li>
 </ul>
-<p>通过以上实现GEBP的伪码，我们我可得到更新$C$的过程中总共花费了$2m_c\times k_c\times n$次浮点数操作以及$m_c\times k_c+(2m_c×n+k_c\times n)$次内存移动操作。故我们可以得到两者之比为$\frac{2m_c\times k_c\times n}{m_c\times k_c+(2m_c\times n+k_c\times n)},一般存在$k_c&lt;&lt;n$故前式可以简化为$\frac{2m_ck_c}{2m_c+k_c}$。又因为在计算机系统中cpu的计算速度远远高于io的操作，为了获取更好的性能我们应尽量保证式\frac{2m_ck_c}{2m_c+k_c}能在上面的假设条件下取得最大值。该问题可以简化为在$m_c\times k_c\le K$的情况下，式$\frac{2m_ck_c}{2m_c+k_c}取得最大值，即可看做求一个矩形在什么情况下其周长最短，面积最大且存在约束$m_ck_c\le K$。可知$A$的形状最好是个正方形即$m_c==k_c$。</p>
+<p>通过以上实现GEBP的伪码，我们我可得到更新$C$的过程中总共花费了$2m_c\times k_c\times n$次浮点数操作以及$m_c\times k_c+(2m_c×n+k_c\times n)$次内存移动操作。故我们可以得到两者之比为$\frac{2m_c\times k_c\times n}{m_c\times k_c+(2m_c\times n+k_c\times n)}$,一般存在$k_c&lt;&lt; n$故前式可以简化为$\frac{2m_ck_c}{2m_c+k_c}$。又因为在计算机系统中cpu的计算速度远远高于io的操作，为了获取更好的性能我们应尽量保证式$\frac{2m_ck_c}{2m_c+k_c}$能在上面的假设条件下取得最大值。该问题可以简化为在$m_c\times k_c\le K$的情况下，式$\frac{2m_ck_c}{2m_c+k_c}$取得最大值，即可看做求一个矩形在什么情况下其周长最短，面积最大且存在约束$m_ck_c\le K$。可知$A$的形状最好是个正方形即$m_c=k_c$。<br>以上分析是基于简单的简化的多级存储结构，而实际的多级存储体系要较为复杂一些，可参考上图中的右图。我们接下来将针对实际的多级存储体系进行进一步的性能分析。<br>首先我们假设我们的矩阵全都是以column-major order(详见：<a href="https://en.wikipedia.org/wiki/Row-_and_column-major_order" target="_blank" rel="external">Row and column-major order</a>)的方式存储。</p>
+<h4 id="Cache-Layer的选择"><a href="#Cache-Layer的选择" class="headerlink" title="Cache Layer的选择"></a>Cache Layer的选择</h4><p>从前面的分析我们可以看到矩阵A存储在离寄存器越近的位置当然越好，L1（一级缓存）可以满足要求以及前面的三条假设，但是L1的大小非常有限，能存储的数据也非常有限。如此条件下我们不得不尝试将A存储到L2下来获取足够的空间。<br>假设$R^{comp}$为CPU可以浮点数操作的速度，$R^{load}$为从L2读取数据到寄存器的速度，$B_j$以及$C_j$均存储在L1下其载入到寄存器的速度忽略不计。则必须满足进行浮点计算的花费的时长必须大于读取数据花费的时长，从而能充分利用cpu的计算性能。即有：</p>
+<script type="math/tex; mode=display">\frac{2m_ck_cn_r}{R^{comp}} \ge \frac{m_ck_c}{R^{load}}</script><p>即：</p>
+<script type="math/tex; mode=display">n_r \ge \frac{R^{comp}}{2R^{load}}</script><h4 id="TLB的影响"><a href="#TLB的影响" class="headerlink" title="TLB的影响"></a>TLB的影响</h4><p>TLB(Translation Lookaside Buffer)转换检测缓冲区是一个内存管理单元,用于改进虚拟地址到物理地址转换速度的缓存。TLB是一个小的，虚拟寻址的缓存，其中每一行都保存着一个由单个PTE(Page Table Entry,页表项)组成的块。如果没有TLB，则每次取数据都需要两次访问内存，即查页表获得物理地址和取数据。<br>cache miss和tlb miss的主要区别在于是否阻塞cpu。前者不会，而后者出现必须更新tlb到最新的内容后cpu才会继续执行。故为了高性能的计算必须减少tlb miss。故在以上3条假设的基础上还需添加新的假设：</p>
+<ul>
+<li>在计算$C_j := AB_j +C_j$的过程中，$m_c$， $k_c$以及$n_r$均需足够下以保证TLB可以缓存其地址，避免出现TLB MISS</li>
+<li>$A$必须在不需要之前一直缓存在TLB中 </li>
+</ul>
+<h4 id="Pack"><a href="#Pack" class="headerlink" title="Pack"></a>Pack</h4><p>由于A是一个大矩阵中的一个较小的矩阵块，其存储必然不会是连续的内存地址，则在缓存至TLB中时会花费额外的TLB条目，基于此我们需要将A copy到连续的内存空间中，将矩阵中的数据copy到连续的内存地址块的过程我们称为pack。如果足够小心可以pack 矩阵A到Cache层。<br>假设TLB中有T条可用条目，$T(A),T(B_j),T(C_j)$分别代表$A$，$B_j$和$C_j$在TLB中占用的条目数，则其必须满足以下条件：</p>
+<script type="math/tex; mode=display">T(A) + 2(T(B_j) + T(C_j)) \le T</script><p>之所以要乘以2，是因为当$B_{j+1}$和$C_{j+1}$第一次被TLB缓存时此时理论上需要替换掉$B_j$和$C_j$的条目，但是在计算$C_j:=AB_j+C_j$时A中的一些行将是最近最少被使用的，其将会首先被$B_{j+1}$以及$C_{j+1}$所替换，乘以2将会保证在$B_{j+2}$和$C_{j+2}$第一次被缓存之前，$C_j,B_j,C_{j+1},B_{j+1}$以及$A$均缓存在TLB中且$B_j,C_j$是最近最少被使用的并被$B_{j+2}, C_{j+2}$所替换。 </p>
+<h3 id="算法分析"><a href="#算法分析" class="headerlink" title="算法分析"></a>算法分析</h3><p>根据前面的分析我们可以写出如下的伪代码来通过GEBP来计算GEPP，如下：</p>
+<img src="/2017/11/06/Gotoblas2-library-use-and-analysis-3/gepp-by-gebp_opt1.png" title="compute gepp by gebp">
+<p>我们应该尽量保证$A$所占用的TLB尽量大，由上面的伪代码可以知道$B$在被计算之前被packing，故$B_j$占用一个TLB条目，$B_{j+1}$也占用一个TLB条目，另外我们使用了$C_{aux}$作为$C_j$的buffer故$C_{aux}$也占用一个TLB条目，而$C_j$并未packing，故其占用$n_r$个TLB条目，则$T(A)=T-(n_r+3)$.由于C中的数据并不需要重复使用故C并不需要packing。<br>同理，我们可以获得其他几种分解方式的伪码。<br>通过GEBP计算GEPM：</p>
+<img src="/2017/11/06/Gotoblas2-library-use-and-analysis-3/gepm-by-gebp.png" title="compute gepm by gebp">
+<p>由上可知，$B_{temp}$，$C_j$以及$C_{j+1}$分别占用一个TLB条目，$B_j$占用$n_r$个TLB条目，故$A$占用的TLB条目数为$T(A)=T-(n_r+3)$</p>
+<p>通过GEPB计算GEPP：</p>
+<img src="/2017/11/06/Gotoblas2-library-use-and-analysis-3/gepp-by-gepb.png" title="compute gepp by gepb">
+<p>同理，$C_aux$，$A_i$以及$A_{i+1}$分别占用一个TLB条目，$C_j$占用$n_c$个TLB条目，故$B$占用的TLB条目数为$T(A)=T-(n_c+3)$</p>
+<p>通过GEPB计算GEMP：</p>
+<img src="/2017/11/06/Gotoblas2-library-use-and-analysis-3/gemp-by-gepb.png" title="compute gemp by gepb">
+<p>同理，$A_{temp}$，$C_i$以及$C_{i+1}$分别占用一个TLB条目，$A_i$占用$m_c$个TLB条目，故$B$占用的TLB条目数为$T(B)=T-(m_c+3)$。<br>我们认为基于GEPDOT的计算的性能会存在明显的劣势，故此处不在给出相关的伪代码。因为在计算$C = A_jB_j + C$时我们需要从对于每一次计算$A_j$，$B_j$我们都需要从L2中载入$C$到寄存器并写回L2中（因为下一次$A_{j+1}$,$B_{j+1}$还会更新$C$），会占用两倍的带宽。其他则不需要。</p>
+<p>我们认为在一个column-major order的矩阵下<strong>GEBP=&gt;GEPP=&gt;GEMM</strong>会达到最佳性能。</p>
+<ul>
+<li>比较GEPB计算GEPP与GEBP计算GEPM两者的伪代码，我们可以发现两者主要的不同在于前者pack B并且将$C_j$在主存中进行计算，后者从主存中packing B，并在缓存中计算C，最后和主存中的C相加。其中前者的$C_j$从主存中移入和移出和后者的将$B$加载入cache的花费可相互抵消,而后者的unpacking C操作要相对于packing要复杂的多，故两者相较选择前者。同理，GEPB计算GEPP与GEPB计算GEMP，前者也有较好的性能。</li>
+<li>比较GEPB计算GEPP与GEPB计算GEPP，可以发现两者的区别仅是A，B的位置调换，我们需要频繁的访问$C_j$，在column-major order的矩阵中通过列访问会达到一个较好的性能，故前者具有最佳的计算性能。 </li>
+</ul>
+<h3 id="参数的选择"><a href="#参数的选择" class="headerlink" title="参数的选择"></a>参数的选择</h3><p>下面我们仅针对GEBP进行分析：</p>
+<img src="/2017/11/06/Gotoblas2-library-use-and-analysis-3/gebp-l1.png" title="gebp parms 1"> <img src="/2017/11/06/Gotoblas2-library-use-and-analysis-3/gebp-l2.png" title="gebp parms 2">
+<p>由上图可知每次计算$C_{aux}$的子矩阵$m_r\times n_r$，需要$2m_rk_cn_r$次浮点数运算，计算过程中$m_r\times n_r$需存储在寄存器中。</p>
+<h4 id="m-r-times-n-r-的选择"><a href="#m-r-times-n-r-的选择" class="headerlink" title="$m_r\times n_r$的选择"></a>$m_r\times n_r$的选择</h4><p>$m_r，n_r$的选择需满足以下约束：</p>
+<ul>
+<li>$m_r\times n_r$一般占用寄存器能存储数量的一半，其他的寄存器用于预存$A$和$B$中的数据。</li>
+<li>当$m_r=n_r$时其加载进入寄存器的消耗最小，即求$<br>$argmin(m_r\times k_c+n_r\times k_c)$$,且$m_r\times n_r=\frac{N}{2}$，N为寄存器的数量，则有$m_r=n_r$</li>
+<li>$n_r$还需满足之前的条件，即 $n_r \ge \frac{R^{comp}}{2R^{load}} </li>
+</ul>
+<h4 id="k-c-的选择"><a href="#k-c-的选择" class="headerlink" title="$k_c$的选择"></a>$k_c$的选择</h4><p>$k_c$需要尽量大，且满足以下约束。</p>
+<ul>
+<li>由于$B_j$需要被重复使用，故$B_j$应常驻L1 Cache中，一般的$k_c\times n_r$占有L1一半的大小以防止$A$和$C_{aux}$覆盖</li>
+<li>$A(m_c\times k_c)$需要小于L2 Cache的大小<br>一般经验是，$k_c$选择page size的一半，4k/8/2=256（8是双精度的大小） <h4 id="m-c-的选择"><a href="#m-c-的选择" class="headerlink" title="$m_c$的选择"></a>$m_c$的选择</h4>$m_c\times k_c$需满足以下两个约束：</li>
+<li>TLB的条目数</li>
+<li>L2 cache的大小<br>在实际使用中$m_c\times k_c$仅选择以上两个值的一半以满足其他方面的需求。<br>下面是一些处理器的架构参数供参考。</li>
+</ul>
+<img src="/2017/11/06/Gotoblas2-library-use-and-analysis-3/param-of-archs.png" title="parms of archs">
+<p>看到这里，你基本上应该对GotoBLAS做的优化有了大概的了解，简单的总结一下，<strong>GotoBLAS是针对我们目前现有的处理器的多层结构，充分利用高速缓存以及减少io带来的等待时间。针对不同处理器选择不同的处理参数从而达到最佳的计算性能</strong>。</p>
+<p>好啦，真的没想到你真的看到了这里，恭喜你又扩大了自己的认识呦。</p>
 
       
 
@@ -297,7 +354,7 @@
     <a class="close js-modal-close" href="javascript:;"><i class="icon icon-close"></i></a>
     <p>扫一扫，分享到微信</p>
     <div class="wx-qrcode">
-      <img src="http://s.jiathis.com/qrcode.php?url=http://suckor.github.io/2017/11/03/Gotoblas2-library-use-and-analysis-3/" alt="微信分享二维码">
+      <img src="http://s.jiathis.com/qrcode.php?url=http://suckor.github.io/2017/11/06/Gotoblas2-library-use-and-analysis-3/" alt="微信分享二维码">
     </div>
 </div>
 
