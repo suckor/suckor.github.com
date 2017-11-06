@@ -240,10 +240,15 @@
 <h4 id="k-c-的选择"><a href="#k-c-的选择" class="headerlink" title="$k_c$的选择"></a>$k_c$的选择</h4><p>$k_c$需要尽量大，且满足以下约束。</p>
 <ul>
 <li>由于$B_j$需要被重复使用，故$B_j$应常驻L1 Cache中，一般的$k_c\times n_r$占有L1一半的大小以防止$A$和$C_{aux}$覆盖</li>
-<li>$A(m_c\times k_c)$需要小于L2 Cache的大小<br>一般经验是，$k_c$选择page size的一半，4k/8/2=256（8是双精度的大小） <h4 id="m-c-的选择"><a href="#m-c-的选择" class="headerlink" title="$m_c$的选择"></a>$m_c$的选择</h4>$m_c\times k_c$需满足以下两个约束：</li>
-<li>TLB的条目数</li>
-<li>L2 cache的大小<br>在实际使用中$m_c\times k_c$仅选择以上两个值的一半以满足其他方面的需求。<br>下面是一些处理器的架构参数供参考。</li>
+<li>$A(m_c\times k_c)$需要小于L2 Cache的大小</li>
 </ul>
+<p>一般经验是，$k_c$选择page size的一半，4k/8/2=256（8是双精度的大小） </p>
+<h4 id="m-c-的选择"><a href="#m-c-的选择" class="headerlink" title="$m_c$的选择"></a>$m_c$的选择</h4><p>$m_c\times k_c$需满足以下两个约束：</p>
+<ul>
+<li>TLB的条目数</li>
+<li>L2 cache的大小 </li>
+</ul>
+<p>在实际使用中$m_c\times k_c$仅选择以上两个值的一半以满足其他方面的需求。<br>下面是一些处理器的架构参数供参考。</p>
 <img src="/2017/11/06/Gotoblas2-library-use-and-analysis-3/param-of-archs.png" title="parms of archs">
 <p>看到这里，你基本上应该对GotoBLAS做的优化有了大概的了解，简单的总结一下，<strong>GotoBLAS是针对我们目前现有的处理器的多层结构，充分利用高速缓存以及减少io带来的等待时间。针对不同处理器选择不同的处理参数从而达到最佳的计算性能</strong>。</p>
 <p>好啦，真的没想到你真的看到了这里，恭喜你又扩大了自己的认识呦。</p>
@@ -324,7 +329,7 @@
     
     <div class="article-entry" itemprop="articleBody">
       
-        <p>GotoBLAS2是TACC（Texas Advanced Computing Center）发布的一款开源软件。主要开发者By Kazushige Goto <a href="&#x6d;&#97;&#x69;&#x6c;&#116;&#111;&#58;&#107;&#x67;&#111;&#x74;&#x6f;&#64;&#x74;&#97;&#99;&#99;&#x2e;&#117;&#116;&#101;&#120;&#97;&#x73;&#46;&#x65;&#x64;&#x75;">&#107;&#x67;&#111;&#x74;&#x6f;&#64;&#x74;&#97;&#99;&#99;&#x2e;&#117;&#116;&#101;&#120;&#97;&#x73;&#46;&#x65;&#x64;&#x75;</a>自2010年更新了最后一个版本1.13就不在继续迭代更新了，不过技术社区还是可以继续使用，研究以及扩展。OpenBLAS就是一款基于GotoBLAS进行继续开发的开源优化库，而且社区直至目前也依然活跃。不过在此我们对其不做详细展开，有兴趣的可以自行了解。<br>本章主要介绍GotoBLAS2的安装以及基本使用方法。该库的一些特性如下：<br><blockquote><p>The library features optimal performance on the following platforms:</p>
+        <p>GotoBLAS2是TACC（Texas Advanced Computing Center）发布的一款开源软件。主要开发者By Kazushige Goto <a href="&#109;&#x61;&#x69;&#108;&#116;&#x6f;&#58;&#x6b;&#103;&#x6f;&#x74;&#x6f;&#x40;&#x74;&#97;&#99;&#99;&#x2e;&#117;&#116;&#101;&#x78;&#x61;&#x73;&#46;&#x65;&#100;&#117;">&#x6b;&#103;&#x6f;&#x74;&#x6f;&#x40;&#x74;&#97;&#99;&#99;&#x2e;&#117;&#116;&#101;&#x78;&#x61;&#x73;&#46;&#x65;&#100;&#117;</a>自2010年更新了最后一个版本1.13就不在继续迭代更新了，不过技术社区还是可以继续使用，研究以及扩展。OpenBLAS就是一款基于GotoBLAS进行继续开发的开源优化库，而且社区直至目前也依然活跃。不过在此我们对其不做详细展开，有兴趣的可以自行了解。<br>本章主要介绍GotoBLAS2的安装以及基本使用方法。该库的一些特性如下：<br><blockquote><p>The library features optimal performance on the following platforms:</p>
 <ul>
 <li>Intel Nehalem and Atom systems</li>
 <li>VIA Nanoprocessor</li>
