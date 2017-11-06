@@ -8,18 +8,18 @@
   <link rel="dns-prefetch" href="//suckor.github.io">
   <title>矩阵优化库GotoBLAS2的使用和分析（1） - BLAS简介 | Suckor的博客</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta name="description" content="BLAS在介绍GotoBLAS2之前，我们需要先了解一下BLAS（Basic Linear Algebra Subprograms），以下是百度百科以及wiki对BLAS做出的定义。BLAS（Basic Linear Algebra Subprograms）即基础线性代数子程序库，里面拥有大量已经编写好的关于线性代数运算的程序。 BLAS百度百科Basic Linear Algebra Subpr">
+  <meta name="description" content="BLAS在介绍GotoBLAS2之前，我们需要先了解一下BLAS（Basic Linear Algebra Subprograms），以下是百度百科以及wiki对BLAS做出的定义。BLAS（Basic Linear Algebra Subprograms）即基础线性代数子程序库，里面拥有大量已经编写好的关于线性代数运算的程序。 BLAS百度百科">
 <meta name="keywords" content="matrix optimization,algorithm">
 <meta property="og:type" content="article">
 <meta property="og:title" content="矩阵优化库GotoBLAS2的使用和分析（1） - BLAS简介">
 <meta property="og:url" content="//suckor.github.io/2017/11/02/Gotoblas2-library-use-and-analysis-1/index.html">
 <meta property="og:site_name" content="Suckor的博客">
-<meta property="og:description" content="BLAS在介绍GotoBLAS2之前，我们需要先了解一下BLAS（Basic Linear Algebra Subprograms），以下是百度百科以及wiki对BLAS做出的定义。BLAS（Basic Linear Algebra Subprograms）即基础线性代数子程序库，里面拥有大量已经编写好的关于线性代数运算的程序。 BLAS百度百科Basic Linear Algebra Subpr">
+<meta property="og:description" content="BLAS在介绍GotoBLAS2之前，我们需要先了解一下BLAS（Basic Linear Algebra Subprograms），以下是百度百科以及wiki对BLAS做出的定义。BLAS（Basic Linear Algebra Subprograms）即基础线性代数子程序库，里面拥有大量已经编写好的关于线性代数运算的程序。 BLAS百度百科">
 <meta property="og:image" content="//suckor.github.io/2017/11/02/Gotoblas2-library-use-and-analysis-1/blas-functions.png">
-<meta property="og:updated_time" content="2017-11-04T06:49:44.960Z">
+<meta property="og:updated_time" content="2017-11-06T11:00:17.321Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="矩阵优化库GotoBLAS2的使用和分析（1） - BLAS简介">
-<meta name="twitter:description" content="BLAS在介绍GotoBLAS2之前，我们需要先了解一下BLAS（Basic Linear Algebra Subprograms），以下是百度百科以及wiki对BLAS做出的定义。BLAS（Basic Linear Algebra Subprograms）即基础线性代数子程序库，里面拥有大量已经编写好的关于线性代数运算的程序。 BLAS百度百科Basic Linear Algebra Subpr">
+<meta name="twitter:description" content="BLAS在介绍GotoBLAS2之前，我们需要先了解一下BLAS（Basic Linear Algebra Subprograms），以下是百度百科以及wiki对BLAS做出的定义。BLAS（Basic Linear Algebra Subprograms）即基础线性代数子程序库，里面拥有大量已经编写好的关于线性代数运算的程序。 BLAS百度百科">
 <meta name="twitter:image" content="//suckor.github.io/2017/11/02/Gotoblas2-library-use-and-analysis-1/blas-functions.png">
   
     <link rel="alternative" href="/atom.xml" title="Suckor的博客" type="application/atom+xml">
@@ -177,7 +177,7 @@
     <div class="article-entry" itemprop="articleBody">
       
         <h2 id="BLAS"><a href="#BLAS" class="headerlink" title="BLAS"></a>BLAS</h2><p>在介绍GotoBLAS2之前，我们需要先了解一下BLAS（Basic Linear Algebra Subprograms），以下是百度百科以及wiki对BLAS做出的定义。<br><blockquote><p>BLAS（Basic Linear Algebra Subprograms）即基础线性代数子程序库，里面拥有大量已经编写好的关于线性代数运算的程序。</p>
-<footer><strong>BLAS</strong><cite><a href="https://baike.baidu.com/item/blas/6585139?fr=aladdin" target="_blank" rel="external">百度百科</a></cite></footer></blockquote><br><blockquote><p>Basic Linear Algebra Subprograms (BLAS) is a specification that prescribes a set of low-level routines for performing common linear algebra operations such as vector addition, scalar multiplication, dot products, linear combinations, and matrix multiplication. They are the de facto standard low-level routines for linear algebra libraries; the routines have bindings for both C and Fortran. Although the BLAS specification is general, BLAS implementations are often optimized for speed on a particular machine, so using them can bring substantial performance benefits. BLAS implementations will take advantage of special floating point hardware such as vector registers or SIMD instructions.</p>
+<footer><strong>BLAS</strong><cite><a href="https://baike.baidu.com/item/blas/6585139?fr=aladdin" target="_blank" rel="external">百度百科</a></cite></footer></blockquote><br><a id="more"></a><br><blockquote><p>Basic Linear Algebra Subprograms (BLAS) is a specification that prescribes a set of low-level routines for performing common linear algebra operations such as vector addition, scalar multiplication, dot products, linear combinations, and matrix multiplication. They are the de facto standard low-level routines for linear algebra libraries; the routines have bindings for both C and Fortran. Although the BLAS specification is general, BLAS implementations are often optimized for speed on a particular machine, so using them can bring substantial performance benefits. BLAS implementations will take advantage of special floating point hardware such as vector registers or SIMD instructions.</p>
 <footer><strong>Basic Linear Algebra Subprograms</strong><cite><a href="https://en.wikipedia.org/wiki/Basic_Linear_Algebra_Subprograms" target="_blank" rel="external">wikipedia</a></cite></footer></blockquote><br>通过以上两种定义我们可以得到这样的认知，BLAS其实就是定义统一的接口标准来进行矩阵操作。它有多种实现包，其中常用的包括ATLAS，Intel MKL，GotoBLAS以及OpenBLAS等等。<br>BLAS支持四种浮点格式的运算：单精度实数（REAL），双精度实数（DOUBLE），单精度复数（COMPLEX）和双精度复数（COMPLEX*16）。对应子程序的首字母分别为S,D,C和Z。<br>根据被定义和发布的时间顺序以及计算的时间复杂度，BLAS被定义为三种<strong>级别</strong>（level）的子程序。<br>level 1主要针对向量之间的操作，其中定义了1979年的BLAS初始文稿中描述的所有子程序，包括向量的点乘，范数以及通常意义上的向量加法。向量加法的一般描述如下：</p>
 <script type="math/tex; mode=display">\pmb{y} \leftarrow a\pmb{x}+\pmb{y}</script><p>其中，a为常量，$x,y$为向量。level 1的时间复杂度为$O(n)$<br>level 2的设计始于1984年，发表于1988年，主要针对的是向量与矩阵之间的操作，时间复杂度一般为$O(n^2)$。其中较一般的的矩阵向量乘法（gemv）的定义如下式：</p>
 <script type="math/tex; mode=display">{\pmb {y}}\leftarrow \alpha {\pmb {A}}{\pmb {x}}+\beta {\pmb {y}}</script><p>level 3发表于1990年，主要针对矩阵之间的操作，时间复杂度一般为$O(n^3)$，其中一般形式的矩阵乘法（gemm）的定义如下式：</p>

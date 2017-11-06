@@ -176,83 +176,10 @@
       
         <p>前面两小结，分别说明了BLAS与GotoBLAS2的关系以及GotoBLAS2的使用方法，如果你仅仅是希望在你的程序中使用GotoBLAS2进行矩阵运算的优化，本小节就可以忽略了，前两节你应该已经得到了你想要的。本小节仅是本着知其然知其所以然的原则，向大家安利一下GotoBLAS2背后的故事。。</p>
 <h2 id="矩阵乘法的算法复杂度分析"><a href="#矩阵乘法的算法复杂度分析" class="headerlink" title="矩阵乘法的算法复杂度分析"></a>矩阵乘法的算法复杂度分析</h2><p>我们假设存在矩阵$A=a_{ij}$和$B=b_{ij}$的$n \times n$的方阵，定义乘积$C=A \cdot B$中的元素$c_{ij}$为：</p>
-<script type="math/tex; mode=display">c_{ij}=\sum_{k=1}^na_{ik} \cdot b_{kj}</script><p>由上式我们可以知道我们需要计算$n^2$个值，每个元素又是$n$个浮点数乘积的和，伪代码如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">n=A.rows</div><div class="line">let C be a new n*n matrix</div><div class="line">for i=1 to n</div><div class="line">	for j=1 to n</div><div class="line">		c&#123;i,j&#125;=0</div><div class="line">		for k = 1 to n</div><div class="line">			c&#123;i,j&#125;=c&#123;i,j&#125; + a&#123;i, k&#125;*b&#123;k,j&#125;</div><div class="line">return C</div></pre></td></tr></table></figure><br>由上述的伪码我们可以发现刚好存在三重循环，最内层循环内的操作仅花费常量的时间，故我们可以得出其时间复杂度为$O(n^3)$。</p>
-<p>有些同学应该知道还存在一种优化的计算方法<strong>strassen</strong>方法，通过精密的够造子矩阵将计算复杂度降低到$O(n^{lg7})$，到目前为止渐进复杂性最优的算法是由Coppersmith和Winograd提出的，时间复杂度在$O(n^{2.376})$。当然这种优化在实际应用中都存在着一些问题，也不是本文讨论的重点，此处就不做具体展开了，有兴趣的小伙伴可以翻翻《算法导论》那里面有你希望得到的答案。</p>
-<p>GotoBLAS2相关实现，并非是在算法复杂度上进行进一步优化和研究，它们的主要工作针对的是现代计算机的多级存储体系设计的简单而又高效的矩阵乘法操作的实现。</p>
-<h2 id="GotoBLAS设计思想"><a href="#GotoBLAS设计思想" class="headerlink" title="GotoBLAS设计思想"></a>GotoBLAS设计思想</h2><p>本文主要参考的是Goto, K.和van de Geigin, R.A.于2008发表的一篇论文《Anatomy of High-Performance Matrix Multiplication》。在具体介绍其基本设计思想和实现之前我们先来看一组多种BLAS实现在不同的处理器下的表现对比。<br><img src="/2017/11/06/Gotoblas2-library-use-and-analysis-3/peformance-by-arch.png" title="Comparison of the matrix-matrix multiplication described in GotoBLAS2 with various other implementations"><br>其中FLOPS为每秒浮点运算次数，主要用于评估电脑的计算性能。GFLOPS为每秒10亿次的浮点运算。从上图我们可以发现，GotoBLAS2和其他集中BLAS的实现在不同的处理器下均取得较为不错的性能，而且我们也可以认为其他集中BLAS的实现也做了和本文类似的优化策略。<br>下面我们针对GotoBLAS2的相关优化策略做详细介绍。</p>
-<h3 id="矩阵的划分"><a href="#矩阵的划分" class="headerlink" title="矩阵的划分"></a>矩阵的划分</h3><p>我们平时遇到的矩阵，一般都可以按照下面的方式划分为不同大小的块，假设存在$m \times n$的矩阵$X$,则我们可以按照行或者列划分为不同的小块。</p>
-<script type="math/tex; mode=display">X=(X_0|X_1|\cdots|X_{N-1})=\pmatrix{\frac{\frac{X'_0}{X'_1}}{\frac{\vdots}{X'_{M-1}}}}</script><p>其中$Column(X_j)=n_b$，$Row(X’_j)=m_b$($Column(X_{N-1})\leq n_b, Row(X’_{M-1})\leq m_b$)。<br>而根据行列size的大小，矩阵的乘法可以分为以下8种类型：<br><img src="/2017/11/06/Gotoblas2-library-use-and-analysis-3/shape-of-gemm.png" title="matrix-matrix product"><br>上图中最后一列，针对不同大小的矩阵乘法的类型分别给出一种标记，GE为GEneral，其他字母的含义如下：</p>
-<ul>
-<li><strong>B</strong>, <strong>B</strong>lock,表示矩阵的行和列的size均很小</li>
-<li><strong>P</strong>,<strong>P</strong>anel,表示矩阵的行和列其中一个值很小，另一个很大</li>
-<li><strong>M</strong>,<strong>M</strong>atrix,表示矩阵的行和列的size均很大或者大小未知</li>
-<li><strong>DOT</strong>, 表示乘积的目标矩阵的行和列的大小都很小<br>有了前面的知识，下面的矩阵的分解我们就很好理解了，按照矩阵不同的划分方式我们可以把一个一般的矩阵相乘，分解为以下六种不同的解法。</li>
-</ul>
-<img src="/2017/11/06/Gotoblas2-library-use-and-analysis-3/layered-of-gemm.png" title="gemm layered">
-<p>由上图我们可以发现，GEMM的计算首先被我们分解为GEPP，GEMP或者GEPM的计算，又进一步拆分为GEBP，GEPB或者GEPDOT的计算。这样我们就很容易看出只要最内层的三种操作GEBP,GEPB以及GEPDOT达到最佳的计算性能，GEMM同时就可以达到最佳性能。<br>从上面的拆分过程中，我们将优化GEMM转变成优化GEBP,GEPB以及GEPDOT的计算性能，下面我们主要以优化GEBP为例进行介绍其优化策略。</p>
-<h3 id="性能分析"><a href="#性能分析" class="headerlink" title="性能分析"></a>性能分析</h3><p>在进行优化之前，我们需要先了解我们在进行矩阵运算时，时间都去哪儿了呢。下图是我们目前的计算机使用的多级存储结构图，左图为简化之后的多级存储结构，右图为实际的多级存储结构。</p>
-<img src="/2017/11/06/Gotoblas2-library-use-and-analysis-3/hierarchical-memories.png" title="hierarchical memories arch">
-<blockquote><p>在一个计算机系统中，对存储器的容量、速度和价格这三个基本性能指标都有一定的要求。存储容量应确保各种应用的需要；存储器速度应尽量与CPU的速度相匹配并支持I/O操作；存储器的价格应比较合理。然而，这三者经常是互相矛盾的。例如存储器的速度越快，则每位的价格就越高；存储器的容量越大，则存储器的速度就越慢。按照目前的技术水平，仅仅采用一种技术组成单一的存储器是不可能同时满足这些要求的。只有采用由多级存储器组成的存储体系，把几种存储技术结合起来，才能较好地解决存储器大容量、高速度和低成本这三者之间的矛盾。</p>
-<footer><strong>多级存储体系,</strong><cite><a href="https://baike.baidu.com/item/%E5%A4%9A%E7%BA%A7%E5%AD%98%E5%82%A8%E4%BD%93%E7%B3%BB/4353951?fr=aladdin" target="_blank" rel="external">百度百科</a></cite></footer></blockquote>
-<p>通过以上的存储器结构我们可以发现，在我们进行矩阵计算时一部分时间花费在cpu的计算上，另一部分花费在数据的读取上（其实基本上所有的软件的处理时间大多都花费在两者身上），另外还有一些计算机的容错操作等，如TLB的更新等等。<br>首先我们考虑我们的简化的存储结构，如上左图所示。对于GEBP，我们假设$A\in R^{m_c \times k_c}, B\in R^{k_c\times n}, C\in R^{m_c\times n}$，并将$B, C$划分为$B=(B_0|B_1|\cdots|B_{N-1})$和$C=(C_0|C_1|\cdots|C_{N-1})$，这样我们就可以通过以下算法实现GEBP：</p>
-<img src="/2017/11/06/Gotoblas2-library-use-and-analysis-3/basic-implementation-for-gebp.png" title="basic implementation for gebp">
-<p>针对以上算法，我们假设：</p>
-<ul>
-<li>$m_c$和$k_c$足够小，保证$B_j$($B$的$n_r列$)，$C_j$($C$的$n_r列$)和$A$同时存在于Cache中。</li>
-<li>如果$A$，$B_j$和$C_j$均存在于Cache中，则$C_j := A\cdot B_j+C_j$将在CPU的峰值速度下被执行。</li>
-<li>$A$会一直存在于Cache中直到我们不在需要它。</li>
-</ul>
-<p>通过以上实现GEBP的伪码，我们我可得到更新$C$的过程中总共花费了$2m_c\times k_c\times n$次浮点数操作以及$m_c\times k_c+(2m_c×n+k_c\times n)$次内存移动操作。故我们可以得到两者之比为$\frac{2m_c\times k_c\times n}{m_c\times k_c+(2m_c\times n+k_c\times n)}$,一般存在$k_c&lt;&lt; n$故前式可以简化为$\frac{2m_ck_c}{2m_c+k_c}$。又因为在计算机系统中cpu的计算速度远远高于io的操作，为了获取更好的性能我们应尽量保证式$\frac{2m_ck_c}{2m_c+k_c}$能在上面的假设条件下取得最大值。该问题可以简化为在$m_c\times k_c\le K$的情况下，式$\frac{2m_ck_c}{2m_c+k_c}$取得最大值，即可看做求一个矩形在什么情况下其周长最短，面积最大且存在约束$m_ck_c\le K$。可知$A$的形状最好是个正方形即$m_c=k_c$。<br>以上分析是基于简单的简化的多级存储结构，而实际的多级存储体系要较为复杂一些，可参考上图中的右图。我们接下来将针对实际的多级存储体系进行进一步的性能分析。<br>首先我们假设我们的矩阵全都是以column-major order(详见：<a href="https://en.wikipedia.org/wiki/Row-_and_column-major_order" target="_blank" rel="external">Row and column-major order</a>)的方式存储。</p>
-<h4 id="Cache-Layer的选择"><a href="#Cache-Layer的选择" class="headerlink" title="Cache Layer的选择"></a>Cache Layer的选择</h4><p>从前面的分析我们可以看到矩阵A存储在离寄存器越近的位置当然越好，L1（一级缓存）可以满足要求以及前面的三条假设，但是L1的大小非常有限，能存储的数据也非常有限。如此条件下我们不得不尝试将A存储到L2下来获取足够的空间。<br>假设$R^{comp}$为CPU可以浮点数操作的速度，$R^{load}$为从L2读取数据到寄存器的速度，$B_j$以及$C_j$均存储在L1下其载入到寄存器的速度忽略不计。则必须满足进行浮点计算的花费的时长必须大于读取数据花费的时长，从而能充分利用cpu的计算性能。即有：</p>
-<script type="math/tex; mode=display">\frac{2m_ck_cn_r}{R^{comp}} \ge \frac{m_ck_c}{R^{load}}</script><p>即：</p>
-<script type="math/tex; mode=display">n_r \ge \frac{R^{comp}}{2R^{load}}</script><h4 id="TLB的影响"><a href="#TLB的影响" class="headerlink" title="TLB的影响"></a>TLB的影响</h4><p>TLB(Translation Lookaside Buffer)转换检测缓冲区是一个内存管理单元,用于改进虚拟地址到物理地址转换速度的缓存。TLB是一个小的，虚拟寻址的缓存，其中每一行都保存着一个由单个PTE(Page Table Entry,页表项)组成的块。如果没有TLB，则每次取数据都需要两次访问内存，即查页表获得物理地址和取数据。<br>cache miss和tlb miss的主要区别在于是否阻塞cpu。前者不会，而后者出现必须更新tlb到最新的内容后cpu才会继续执行。故为了高性能的计算必须减少tlb miss。故在以上3条假设的基础上还需添加新的假设：</p>
-<ul>
-<li>在计算$C_j := AB_j +C_j$的过程中，$m_c$， $k_c$以及$n_r$均需足够下以保证TLB可以缓存其地址，避免出现TLB MISS</li>
-<li>$A$必须在不需要之前一直缓存在TLB中 </li>
-</ul>
-<h4 id="Pack"><a href="#Pack" class="headerlink" title="Pack"></a>Pack</h4><p>由于A是一个大矩阵中的一个较小的矩阵块，其存储必然不会是连续的内存地址，则在缓存至TLB中时会花费额外的TLB条目，基于此我们需要将A copy到连续的内存空间中，将矩阵中的数据copy到连续的内存地址块的过程我们称为pack。如果足够小心可以pack 矩阵A到Cache层。<br>假设TLB中有T条可用条目，$T(A),T(B_j),T(C_j)$分别代表$A$，$B_j$和$C_j$在TLB中占用的条目数，则其必须满足以下条件：</p>
-<script type="math/tex; mode=display">T(A) + 2(T(B_j) + T(C_j)) \le T</script><p>之所以要乘以2，是因为当$B_{j+1}$和$C_{j+1}$第一次被TLB缓存时此时理论上需要替换掉$B_j$和$C_j$的条目，但是在计算$C_j:=AB_j+C_j$时A中的一些行将是最近最少被使用的，其将会首先被$B_{j+1}$以及$C_{j+1}$所替换，乘以2将会保证在$B_{j+2}$和$C_{j+2}$第一次被缓存之前，$C_j,B_j,C_{j+1},B_{j+1}$以及$A$均缓存在TLB中且$B_j,C_j$是最近最少被使用的并被$B_{j+2}, C_{j+2}$所替换。 </p>
-<h3 id="算法分析"><a href="#算法分析" class="headerlink" title="算法分析"></a>算法分析</h3><p>根据前面的分析我们可以写出如下的伪代码来通过GEBP来计算GEPP，如下：</p>
-<img src="/2017/11/06/Gotoblas2-library-use-and-analysis-3/gepp-by-gebp_opt1.png" title="compute gepp by gebp">
-<p>我们应该尽量保证$A$所占用的TLB尽量大，由上面的伪代码可以知道$B$在被计算之前被packing，故$B_j$占用一个TLB条目，$B_{j+1}$也占用一个TLB条目，另外我们使用了$C_{aux}$作为$C_j$的buffer故$C_{aux}$也占用一个TLB条目，而$C_j$并未packing，故其占用$n_r$个TLB条目，则$T(A)=T-(n_r+3)$.由于C中的数据并不需要重复使用故C并不需要packing。<br>同理，我们可以获得其他几种分解方式的伪码。<br>通过GEBP计算GEPM：</p>
-<img src="/2017/11/06/Gotoblas2-library-use-and-analysis-3/gepm-by-gebp.png" title="compute gepm by gebp">
-<p>由上可知，$B_{temp}$，$C_j$以及$C_{j+1}$分别占用一个TLB条目，$B_j$占用$n_r$个TLB条目，故$A$占用的TLB条目数为$T(A)=T-(n_r+3)$</p>
-<p>通过GEPB计算GEPP：</p>
-<img src="/2017/11/06/Gotoblas2-library-use-and-analysis-3/gepp-by-gepb.png" title="compute gepp by gepb">
-<p>同理，$C_aux$，$A_i$以及$A_{i+1}$分别占用一个TLB条目，$C_j$占用$n_c$个TLB条目，故$B$占用的TLB条目数为$T(A)=T-(n_c+3)$</p>
-<p>通过GEPB计算GEMP：</p>
-<img src="/2017/11/06/Gotoblas2-library-use-and-analysis-3/gemp-by-gepb.png" title="compute gemp by gepb">
-<p>同理，$A_{temp}$，$C_i$以及$C_{i+1}$分别占用一个TLB条目，$A_i$占用$m_c$个TLB条目，故$B$占用的TLB条目数为$T(B)=T-(m_c+3)$。<br>我们认为基于GEPDOT的计算的性能会存在明显的劣势，故此处不在给出相关的伪代码。因为在计算$C = A_jB_j + C$时我们需要从对于每一次计算$A_j$，$B_j$我们都需要从L2中载入$C$到寄存器并写回L2中（因为下一次$A_{j+1}$,$B_{j+1}$还会更新$C$），会占用两倍的带宽。其他则不需要。</p>
-<p>我们认为在一个column-major order的矩阵下<strong>GEBP=&gt;GEPP=&gt;GEMM</strong>会达到最佳性能。</p>
-<ul>
-<li>比较GEPB计算GEPP与GEBP计算GEPM两者的伪代码，我们可以发现两者主要的不同在于前者pack B并且将$C_j$在主存中进行计算，后者从主存中packing B，并在缓存中计算C，最后和主存中的C相加。其中前者的$C_j$从主存中移入和移出和后者的将$B$加载入cache的花费可相互抵消,而后者的unpacking C操作要相对于packing要复杂的多，故两者相较选择前者。同理，GEPB计算GEPP与GEPB计算GEMP，前者也有较好的性能。</li>
-<li>比较GEPB计算GEPP与GEPB计算GEPP，可以发现两者的区别仅是A，B的位置调换，我们需要频繁的访问$C_j$，在column-major order的矩阵中通过列访问会达到一个较好的性能，故前者具有最佳的计算性能。 </li>
-</ul>
-<h3 id="参数的选择"><a href="#参数的选择" class="headerlink" title="参数的选择"></a>参数的选择</h3><p>下面我们仅针对GEBP进行分析：</p>
-<img src="/2017/11/06/Gotoblas2-library-use-and-analysis-3/gebp-l1.png" title="gebp parms 1"> <img src="/2017/11/06/Gotoblas2-library-use-and-analysis-3/gebp-l2.png" title="gebp parms 2">
-<p>由上图可知每次计算$C_{aux}$的子矩阵$m_r\times n_r$，需要$2m_rk_cn_r$次浮点数运算，计算过程中$m_r\times n_r$需存储在寄存器中。</p>
-<h4 id="m-r-times-n-r-的选择"><a href="#m-r-times-n-r-的选择" class="headerlink" title="$m_r\times n_r$的选择"></a>$m_r\times n_r$的选择</h4><p>$m_r，n_r$的选择需满足以下约束：</p>
-<ul>
-<li>$m_r\times n_r$一般占用寄存器能存储数量的一半，其他的寄存器用于预存$A$和$B$中的数据。</li>
-<li>当$m_r=n_r$时其加载进入寄存器的消耗最小，即求$<br>$argmin(m_r\times k_c+n_r\times k_c)$$,且$m_r\times n_r=\frac{N}{2}$，N为寄存器的数量，则有$m_r=n_r$</li>
-<li>$n_r$还需满足之前的条件，即 $n_r \ge \frac{R^{comp}}{2R^{load}} </li>
-</ul>
-<h4 id="k-c-的选择"><a href="#k-c-的选择" class="headerlink" title="$k_c$的选择"></a>$k_c$的选择</h4><p>$k_c$需要尽量大，且满足以下约束。</p>
-<ul>
-<li>由于$B_j$需要被重复使用，故$B_j$应常驻L1 Cache中，一般的$k_c\times n_r$占有L1一半的大小以防止$A$和$C_{aux}$覆盖</li>
-<li>$A(m_c\times k_c)$需要小于L2 Cache的大小</li>
-</ul>
-<p>一般经验是，$k_c$选择page size的一半，4k/8/2=256（8是双精度的大小） </p>
-<h4 id="m-c-的选择"><a href="#m-c-的选择" class="headerlink" title="$m_c$的选择"></a>$m_c$的选择</h4><p>$m_c\times k_c$需满足以下两个约束：</p>
-<ul>
-<li>TLB的条目数</li>
-<li>L2 cache的大小 </li>
-</ul>
-<p>在实际使用中$m_c\times k_c$仅选择以上两个值的一半以满足其他方面的需求。<br>下面是一些处理器的架构参数供参考。</p>
-<img src="/2017/11/06/Gotoblas2-library-use-and-analysis-3/param-of-archs.png" title="parms of archs">
-<p>看到这里，你基本上应该对GotoBLAS做的优化有了大概的了解，简单的总结一下，<strong>GotoBLAS是针对我们目前现有的处理器的多层结构，充分利用高速缓存以及减少io带来的等待时间。针对不同处理器选择不同的处理参数从而达到最佳的计算性能</strong>。</p>
-<p>好啦，真的没想到你真的看到了这里，恭喜你又扩大了自己的认识呦。</p>
-
+<script type="math/tex; mode=display">c_{ij}=\sum_{k=1}^na_{ik} \cdot b_{kj}</script>
+        
+          <a class="article-more-a" href="/2017/11/06/Gotoblas2-library-use-and-analysis-3/#more">more >></a>
+        
       
 
       
@@ -329,25 +256,10 @@
     
     <div class="article-entry" itemprop="articleBody">
       
-        <p>GotoBLAS2是TACC（Texas Advanced Computing Center）发布的一款开源软件。主要开发者By Kazushige Goto <a href="&#109;&#x61;&#x69;&#108;&#116;&#x6f;&#58;&#x6b;&#103;&#x6f;&#x74;&#x6f;&#x40;&#x74;&#97;&#99;&#99;&#x2e;&#117;&#116;&#101;&#x78;&#x61;&#x73;&#46;&#x65;&#100;&#117;">&#x6b;&#103;&#x6f;&#x74;&#x6f;&#x40;&#x74;&#97;&#99;&#99;&#x2e;&#117;&#116;&#101;&#x78;&#x61;&#x73;&#46;&#x65;&#100;&#117;</a>自2010年更新了最后一个版本1.13就不在继续迭代更新了，不过技术社区还是可以继续使用，研究以及扩展。OpenBLAS就是一款基于GotoBLAS进行继续开发的开源优化库，而且社区直至目前也依然活跃。不过在此我们对其不做详细展开，有兴趣的可以自行了解。<br>本章主要介绍GotoBLAS2的安装以及基本使用方法。该库的一些特性如下：<br><blockquote><p>The library features optimal performance on the following platforms:</p>
-<ul>
-<li>Intel Nehalem and Atom systems</li>
-<li>VIA Nanoprocessor</li>
-<li>AMD Shanghai and Istanbul</li>
-</ul>
-<p>The library includes the following features:</p>
-<ul>
-<li>Configurations for a variety of hardware platforms</li>
-<li>Incorporation of features of many ISAs (Instruction Set Architecture)</li>
-<li>Implementation of NUMA controls to assure best process affinity and memory policy<br>  Dynamic detection of multiple architecture components, which can be included in a single binary (for binary distributions)</li>
-</ul>
-<footer><strong>GotoBLAS2 features</strong><cite><a href="https://www.tacc.utexas.edu/research-development/tacc-software/gotoblas2" target="_blank" rel="external">TACC</a></cite></footer></blockquote></p>
-<h2 id="GotoBLAS2下载及安装"><a href="#GotoBLAS2下载及安装" class="headerlink" title="GotoBLAS2下载及安装"></a>GotoBLAS2下载及安装</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">wget -c https://www.tacc.utexas.edu/documents/1084364/1087496/GotoBLAS2-1.13.tar.gz/b58aeb8c-9d8d-4ec2-b5f1-5a5843b4d47b -O GotoBLAS2-1.13.tar.gz</div><div class="line">tar -zxvf GotoBLAS2-1.13.tar.gz</div><div class="line">cd GotoBLAS2/</div></pre></td></tr></table></figure>
-<p>下载完成后，进入解压后的GotoBLAS2目录，并详细阅读其内的01Readme.txt，… ,06WeirdPerformance等文件，并详细阅读其内的01Readme.txt，… ,06WeirdPerformance等文件，并详细阅读其内的01Readme.txt，… ,06WeirdPerformance等文件，重要的事情说三遍，其内有很多必要的帮助信息，千万不可偷懒呦。<br>在进行编译时需指定你的处理器架构，如<code>make TARGET=NEHALEM</code>，你可以在文件getarch.c中获得支持的架构列表，如果无法确定处理器的架构，也可直接执行<code>make BINARY=64 DYNAMIC_ARCH=1</code>对其进行编译（若不指定处理器的架构在编译过程中可能会引起一些error，编译过程中需要保持联网状态，因为在编译过程中会下载lapack-3.1.1.tgz进行编译安装）。</p>
-<p>编译完成后会生成以下静态库和动态库两个文件，如我的编译命令为<code>make TARGET=NEHALEM</code>生成的动态库以及静态库分别为<code>libgoto2_nehalemp-r1.13.so</code>和<code>libgoto2_nehalemp-r1.13.a</code>。同时生成两个link文件<code>libgoto2.so</code>和<code>libgoto2.a</code>分别指向这两个库文件。</p>
-<p>接下来，我们来测试一下，我们的生成的库文件是否可以正常使用，GotoBLAS2提供了一套测试脚本，在目录test和ctest下。test目录主要是用Fortran语言写的测试脚本，原谅我的不学无术，我对Fortran的了解近乎空白，所以我们还是到ctest文件夹下看看吧。。ctest下的主体测试程序都是通过c实现的，不过也夹杂着Fortran的实现。看着好累，如果你和我一样没有足够的耐心也可以选择跳过，进行测试是否能正常使用我们刚生成的静态库。<br>在测试之前，还需注意一个问题，因为我们生成的静态库是在nehalem架构下生成的，而GotoBLAS2默认的架构貌似是prescott，所以我们还需要改一下静态库的名称，才能正常编译使用我们的测试程序。分别打开ctest和test下的Makefile文件，在文件的开始添加以下定义：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">LIBNAME=libgoto2_nehalemp-r1.13.a</div></pre></td></tr></table></figure><br>然后执行<code>make tests</code>，如果你的编译过程没有问题的话，你会看到很多的PASS的log信息如下，那恭喜你，你的测试通过了。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div></pre></td><td class="code"><pre><div class="line">... ...</div><div class="line"> cblas_dtbmv  PASSED THE COLUMN-MAJOR COMPUTATIONAL TESTS (  1153 CALLS)</div><div class="line"> cblas_dtbmv  PASSED THE ROW-MAJOR    COMPUTATIONAL TESTS (  1153 CALLS)</div><div class="line"> </div><div class="line"> cblas_dtpmv  PASSED THE TESTS OF ERROR-EXITS</div><div class="line"> </div><div class="line"> cblas_dtpmv  PASSED THE COLUMN-MAJOR COMPUTATIONAL TESTS (   289 CALLS)</div><div class="line"> cblas_dtpmv  PASSED THE ROW-MAJOR    COMPUTATIONAL TESTS (   289 CALLS)</div><div class="line"> </div><div class="line"> cblas_dtrsv  PASSED THE TESTS OF ERROR-EXITS</div><div class="line"> </div><div class="line"> cblas_dtrsv  PASSED THE COLUMN-MAJOR COMPUTATIONAL TESTS (   289 CALLS)</div><div class="line"> cblas_dtrsv  PASSED THE ROW-MAJOR    COMPUTATIONAL TESTS (   289 CALLS)</div><div class="line"> </div><div class="line"> cblas_dtbsv  PASSED THE TESTS OF ERROR-EXITS</div><div class="line">... ...</div></pre></td></tr></table></figure></p>
-<h2 id="GotoBLAS2静态库的使用及测试"><a href="#GotoBLAS2静态库的使用及测试" class="headerlink" title="GotoBLAS2静态库的使用及测试"></a>GotoBLAS2静态库的使用及测试</h2><p>虽然测试通过了，但是还是有点心里没底肿么办，毕竟测试程序不是自己写的。为了让自己更加熟悉GotoBLAS2的函数的使用，我们还是老老实实自己写一个测试程序吧。<br>在主目录下创建测试目录simpletest，并在simpletest下创建测试程序simpletest.c，测试代码如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div><div class="line">66</div><div class="line">67</div><div class="line">68</div><div class="line">69</div><div class="line">70</div><div class="line">71</div><div class="line">72</div><div class="line">73</div><div class="line">74</div><div class="line">75</div><div class="line">76</div><div class="line">77</div><div class="line">78</div><div class="line">79</div><div class="line">80</div><div class="line">81</div><div class="line">82</div><div class="line">83</div><div class="line">84</div><div class="line">85</div><div class="line">86</div><div class="line">87</div><div class="line">88</div></pre></td><td class="code"><pre><div class="line">/* C source code is found in dgemm_example.c */</div><div class="line"></div><div class="line">#define min(x,y) (((x) &lt; (y)) ? (x) : (y))</div><div class="line"></div><div class="line">#include &lt;stdio.h&gt;</div><div class="line">#include &lt;stdlib.h&gt;</div><div class="line">#include &quot;../common.h&quot;</div><div class="line">#include &quot;../cblas.h&quot;</div><div class="line"></div><div class="line">int main()</div><div class="line">&#123;</div><div class="line">	double *A, *B, *C;</div><div class="line">	int m, n, k, i, j;</div><div class="line">	double alpha, beta;</div><div class="line"></div><div class="line">	printf (&quot;\n This example computes real matrix C=alpha*A*B+beta*C using \n&quot;</div><div class="line">				&quot; GotoBLAS2 function dgemm, where A, B, and  C are matrices and \n&quot;</div><div class="line">				&quot; alpha and beta are double precision scalars\n\n&quot;);</div><div class="line"></div><div class="line">	m = 2000, k = 200, n = 1000;</div><div class="line">	printf (&quot; Initializing data for matrix multiplication C=A*B for matrix \n&quot;</div><div class="line">				&quot; A(%ix%i) and matrix B(%ix%i)\n\n&quot;, m, k, k, n);</div><div class="line">	alpha = 1.0; beta = 0.0;</div><div class="line"></div><div class="line">	printf (&quot; Allocating memory for matrices aligned on 64-byte boundary for better \n&quot;</div><div class="line">				&quot; performance \n\n&quot;);</div><div class="line">	A = (double *)malloc( m*k*sizeof( double ));</div><div class="line">	B = (double *)malloc( k*n*sizeof( double ));</div><div class="line">	C = (double *)malloc( m*n*sizeof( double ));</div><div class="line">	if (A == NULL || B == NULL || C == NULL) &#123;</div><div class="line">		printf( &quot;\n ERROR: Can&apos;t allocate memory for matrices. Aborting... \n\n&quot;);</div><div class="line">		free(A);</div><div class="line">		free(B);</div><div class="line">		free(C);</div><div class="line">		return 1;</div><div class="line">	&#125;</div><div class="line"></div><div class="line">	printf (&quot; Intializing matrix data \n\n&quot;);</div><div class="line">	for (i = 0; i &lt; (m*k); i++) &#123;</div><div class="line">		A[i] = (double)(i+1);</div><div class="line">	&#125;</div><div class="line"></div><div class="line">	for (i = 0; i &lt; (k*n); i++) &#123;</div><div class="line">		B[i] = (double)(-i-1);</div><div class="line">	&#125;</div><div class="line"></div><div class="line">	for (i = 0; i &lt; (m*n); i++) &#123;</div><div class="line">		C[i] = 0.0;</div><div class="line">	&#125;</div><div class="line"></div><div class="line">	printf (&quot; Computing matrix product using GotoBLAS2 dgemm function via CBLAS interface \n\n&quot;);</div><div class="line">	cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, </div><div class="line">				m, n, k, alpha, A, k, B, n, beta, C, n);</div><div class="line">	printf (&quot;\n Computations completed.\n\n&quot;);</div><div class="line"></div><div class="line">	printf (&quot; Top left corner of matrix A: \n&quot;);</div><div class="line">	for (i=0; i&lt;min(m,6); i++) &#123;</div><div class="line">		for (j=0; j&lt;min(k,6); j++) &#123;</div><div class="line">			printf (&quot;%12.0f&quot;, A[j+i*k]);</div><div class="line">		&#125;</div><div class="line">		printf (&quot;\n&quot;);</div><div class="line">	&#125;</div><div class="line"></div><div class="line">	printf (&quot;\n Top left corner of matrix B: \n&quot;);</div><div class="line">	for (i=0; i&lt;min(k,6); i++) &#123;</div><div class="line">		for (j=0; j&lt;min(n,6); j++) &#123;</div><div class="line">			printf (&quot;%12.0f&quot;, B[j+i*n]);</div><div class="line">		&#125;</div><div class="line">		printf (&quot;\n&quot;);</div><div class="line">	&#125;</div><div class="line"></div><div class="line">	printf (&quot;\n Top left corner of matrix C: \n&quot;);</div><div class="line">	for (i=0; i&lt;min(m,6); i++) &#123;</div><div class="line">		for (j=0; j&lt;min(n,6); j++) &#123;</div><div class="line">			printf (&quot;%12.5G&quot;, C[j+i*n]);</div><div class="line">		&#125;</div><div class="line">		printf (&quot;\n&quot;);</div><div class="line">	&#125;</div><div class="line"></div><div class="line">	printf (&quot;\n Deallocating memory \n\n&quot;);</div><div class="line">	free(A);</div><div class="line">	free(B);</div><div class="line">	free(C);</div><div class="line"></div><div class="line">	printf (&quot; Example completed. \n\n&quot;);</div><div class="line">	return 0;</div><div class="line">&#125;</div><div class="line"></div></pre></td></tr></table></figure><br>编译，执行你的测试脚本。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">$ gcc -o simpletest simpletest.c ../libgoto2.a -lm -lpthread</div><div class="line">$ ./simpletest</div></pre></td></tr></table></figure><br>好了，现在你可以拍着胸脯保证，你的GotoBLAS2静态库没啥问题啦（我会告诉你这个测试脚本是MKL官方提供的测试脚本吗：））！API参数的说明可以参看intel官方给出的说明，这是我看到的最详细的了，安利给你了（<a href="https://software.intel.com/en-us/mkl-developer-reference-c-blas-and-sparse-blas-routines" target="_blank" rel="external">BLAS and Sparse BLAS Routines</a>）</p>
-
+        <p>GotoBLAS2是TACC（Texas Advanced Computing Center）发布的一款开源软件。主要开发者By Kazushige Goto <a href="&#109;&#97;&#x69;&#108;&#116;&#111;&#58;&#x6b;&#x67;&#111;&#116;&#x6f;&#x40;&#x74;&#97;&#99;&#99;&#46;&#x75;&#116;&#x65;&#120;&#97;&#115;&#x2e;&#x65;&#x64;&#x75;">&#x6b;&#x67;&#111;&#116;&#x6f;&#x40;&#x74;&#97;&#99;&#99;&#46;&#x75;&#116;&#x65;&#120;&#97;&#115;&#x2e;&#x65;&#x64;&#x75;</a>自2010年更新了最后一个版本1.13就不在继续迭代更新了，不过技术社区还是可以继续使用，研究以及扩展。OpenBLAS就是一款基于GotoBLAS进行继续开发的开源优化库，而且社区直至目前也依然活跃。不过在此我们对其不做详细展开，有兴趣的可以自行了解。<br>
+        
+          <a class="article-more-a" href="/2017/11/03/Gotoblas2-library-use-and-analysis-2/#more">more >></a>
+        
       
 
       
@@ -425,13 +337,10 @@
     <div class="article-entry" itemprop="articleBody">
       
         <h2 id="BLAS"><a href="#BLAS" class="headerlink" title="BLAS"></a>BLAS</h2><p>在介绍GotoBLAS2之前，我们需要先了解一下BLAS（Basic Linear Algebra Subprograms），以下是百度百科以及wiki对BLAS做出的定义。<br><blockquote><p>BLAS（Basic Linear Algebra Subprograms）即基础线性代数子程序库，里面拥有大量已经编写好的关于线性代数运算的程序。</p>
-<footer><strong>BLAS</strong><cite><a href="https://baike.baidu.com/item/blas/6585139?fr=aladdin" target="_blank" rel="external">百度百科</a></cite></footer></blockquote><br><blockquote><p>Basic Linear Algebra Subprograms (BLAS) is a specification that prescribes a set of low-level routines for performing common linear algebra operations such as vector addition, scalar multiplication, dot products, linear combinations, and matrix multiplication. They are the de facto standard low-level routines for linear algebra libraries; the routines have bindings for both C and Fortran. Although the BLAS specification is general, BLAS implementations are often optimized for speed on a particular machine, so using them can bring substantial performance benefits. BLAS implementations will take advantage of special floating point hardware such as vector registers or SIMD instructions.</p>
-<footer><strong>Basic Linear Algebra Subprograms</strong><cite><a href="https://en.wikipedia.org/wiki/Basic_Linear_Algebra_Subprograms" target="_blank" rel="external">wikipedia</a></cite></footer></blockquote><br>通过以上两种定义我们可以得到这样的认知，BLAS其实就是定义统一的接口标准来进行矩阵操作。它有多种实现包，其中常用的包括ATLAS，Intel MKL，GotoBLAS以及OpenBLAS等等。<br>BLAS支持四种浮点格式的运算：单精度实数（REAL），双精度实数（DOUBLE），单精度复数（COMPLEX）和双精度复数（COMPLEX*16）。对应子程序的首字母分别为S,D,C和Z。<br>根据被定义和发布的时间顺序以及计算的时间复杂度，BLAS被定义为三种<strong>级别</strong>（level）的子程序。<br>level 1主要针对向量之间的操作，其中定义了1979年的BLAS初始文稿中描述的所有子程序，包括向量的点乘，范数以及通常意义上的向量加法。向量加法的一般描述如下：</p>
-<script type="math/tex; mode=display">\pmb{y} \leftarrow a\pmb{x}+\pmb{y}</script><p>其中，a为常量，$x,y$为向量。level 1的时间复杂度为$O(n)$<br>level 2的设计始于1984年，发表于1988年，主要针对的是向量与矩阵之间的操作，时间复杂度一般为$O(n^2)$。其中较一般的的矩阵向量乘法（gemv）的定义如下式：</p>
-<script type="math/tex; mode=display">{\pmb {y}}\leftarrow \alpha {\pmb {A}}{\pmb {x}}+\beta {\pmb {y}}</script><p>level 3发表于1990年，主要针对矩阵之间的操作，时间复杂度一般为$O(n^3)$，其中一般形式的矩阵乘法（gemm）的定义如下式：</p>
-<script type="math/tex; mode=display">{\pmb {C}}\leftarrow \alpha {\pmb {A}}{\pmb {B}}+\beta {\pmb {C}}</script><p>BLAS提供的三种level的函数接口列表见下图：<br><img src="/2017/11/02/Gotoblas2-library-use-and-analysis-1/blas-functions.png" title="BLAS functions"></p>
-<p>至此，相信对BLAS也有了一定的初步的了解，接下来要说明的将是BLAS的一种实现，也就是我们标题中所说明的GotoBLAS2。详情可继续关注《矩阵优化库GotoBLAS2的使用和分析》系列呦。</p>
-
+<footer><strong>BLAS</strong><cite><a href="https://baike.baidu.com/item/blas/6585139?fr=aladdin" target="_blank" rel="external">百度百科</a></cite></footer></blockquote><br>
+        
+          <a class="article-more-a" href="/2017/11/02/Gotoblas2-library-use-and-analysis-1/#more">more >></a>
+        
       
 
       
@@ -510,11 +419,10 @@
       
         <p>在利用hexo+github搭建个人博客时，发布自己的博客时即执行<code>hexo clean  &amp;&amp; hexo g &amp;&amp; hexo d</code>时，要不断重复的输入自己的账户和密码是一个很不友好的体验。遂希望可以规避该问题。百度之，发现可以通过设置ssh key来规避该问题。不过感觉设置ssh key还是比较复杂的一种方案。遂又百度之，发现一种较为简单的方案，分享之。</p>
 <p><code>git config</code>一般可以用于设置git的全局变量，该方法主要通过该命令进行设置，帮助文档可通过<code>git help config</code>获取。</p>
-<p>执行命令：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">git config --global credential.helper store</div></pre></td></tr></table></figure><br>该命令的相关说明见下<br><figure class="highlight plain"><figcaption><span>git help credentials</span></figcaption><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">SYNOPSIS</div><div class="line">       git config credential.https://example.com.username myusername</div><div class="line">       git config credential.helper &quot;$helper $options&quot;</div><div class="line"></div><div class="line">DESCRIPTION</div><div class="line">       Git will sometimes need credentials from the user in order to perform operations; for example, it may need to ask for a username and password in order to access a remote repository over HTTP.</div><div class="line">       This manual describes the mechanisms Git uses to request these credentials, as well as some features to avoid inputting these credentials repeatedly.</div></pre></td></tr></table></figure><br>这一步会在用户目录下的.gitconfig文件最后添加:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">[credential]</div><div class="line">    helper = store</div></pre></td></tr></table></figure></p>
-<p>现在push你的代码 (git push)或者执行<code>hexo clean  &amp;&amp; hexo g &amp;&amp; hexo d</code>, 这时会让你输入用户名密码, 这一步输入的用户名密码会被记住, 下次再push代码时就不用输入用户名密码啦!</p>
-<p>你可以查看<code>～/.git-credential</code>得到你存储在本地的git的账户和密码，是不是so easy。</p>
-<p>在此，也推荐一款在ubuntu下编辑markdown的编辑器，Remarkable。没错这篇文章就是在此编辑器下编辑的。提供很多实用的功能，最重要的是可以实时预览呦。当然你也可以选择一些在线的编辑器，也能对markdown做很好的处理。</p>
-
+<p>执行命令：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">git config --global credential.helper store</div></pre></td></tr></table></figure><br>
+        
+          <a class="article-more-a" href="/2017/11/01/github-remember-username-and-password/#more">more >></a>
+        
       
 
       
