@@ -6,17 +6,19 @@
   <meta name="renderer" content="webkit">
   <meta http-equiv="X-UA-Compatible" content="IE=edge" >
   <link rel="dns-prefetch" href="//suckor.github.io">
-  <title>Tag: leetcode | Suckor的博客</title>
+  <title>leetcode algorithms(2)---Remove Comments(Medium) | Suckor的博客</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta name="description" content="算法，github，机器学习，NLP，语音识别，语音评测，CTC，LSTM">
-<meta property="og:type" content="website">
-<meta property="og:title" content="Suckor的博客">
-<meta property="og:url" content="//suckor.github.io/tags/leetcode/index.html">
+  <meta name="description" content="闲话少说，让我们先来看一下问题吧。">
+<meta name="keywords" content="leetcode,algorithm">
+<meta property="og:type" content="article">
+<meta property="og:title" content="leetcode algorithms(2)---Remove Comments(Medium)">
+<meta property="og:url" content="//suckor.github.io/2017/11/21/leetcode-algorithms-2-Remove-Comments-Medium/index.html">
 <meta property="og:site_name" content="Suckor的博客">
-<meta property="og:description" content="算法，github，机器学习，NLP，语音识别，语音评测，CTC，LSTM">
+<meta property="og:description" content="闲话少说，让我们先来看一下问题吧。">
+<meta property="og:updated_time" content="2017-11-21T10:04:51.446Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Suckor的博客">
-<meta name="twitter:description" content="算法，github，机器学习，NLP，语音识别，语音评测，CTC，LSTM">
+<meta name="twitter:title" content="leetcode algorithms(2)---Remove Comments(Medium)">
+<meta name="twitter:description" content="闲话少说，让我们先来看一下问题吧。">
   
     <link rel="alternative" href="/atom.xml" title="Suckor的博客" type="application/atom+xml">
   
@@ -152,36 +154,91 @@
             <canvas data-colors="#eaeaea" data-sectionHeight="100" data-contentId="js-content" id="myCanvas1" class="anm-canvas"></canvas>
           </div>
           <div id="js-content" class="content-ll">
-            
+            <article id="post-leetcode-algorithms-2-Remove-Comments-Medium" class="article article-type-post " itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
   
+    <h1 class="article-title" itemprop="name">
+      leetcode algorithms(2)---Remove Comments(Medium)
+    </h1>
   
-    
-    
-      
-      
-      <section class="archives-wrap">
-        <div class="archive-year-wrap">
-          <a href="/archives/2017" class="archive-year">2017</a>
-        </div>
-        <div class="archives">
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2017/11/21/leetcode-algorithms-2-Remove-Comments-Medium/" class="archive-article-date">
+
+        
+        <a href="/2017/11/21/leetcode-algorithms-2-Remove-Comments-Medium/" class="archive-article-date">
   	<time datetime="2017-11-21T09:03:16.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2017-11-21</time>
 </a>
-        </div>
-    	 
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2017/11/21/leetcode-algorithms-2-Remove-Comments-Medium/">leetcode algorithms(2)---Remove Comments(Medium)</a>
-    </h1>
-  
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>闲话少说，让我们先来看一下问题吧。<br><a id="more"></a><br><blockquote><p>Given a C++ program, remove comments from it. The program source is an array where source[i] is the i-th line of the source code. This represents the result of splitting the original source code string by the newline character \n.</p>
+<p>In C++, there are two types of comments, line comments, and block comments.</p>
+<p>The string // denotes a line comment, which represents that it and rest of the characters to the right of it in the same line should be ignored.</p>
+<p>The string /<em> denotes a block comment, which represents that all characters until the next (non-overlapping) occurrence of </em>/ should be ignored. (Here, occurrences happen in reading order: line by line from left to right.) To be clear, the string /*/ does not yet end the block comment, as the ending would be overlapping the beginning.</p>
+<p>The first effective comment takes precedence over others: if the string // occurs in a block comment, it is ignored. Similarly, if the string /* occurs in a line or block comment, it is also ignored.</p>
+<p>If a certain line of code is empty after removing comments, you must not output that line: each string in the answer list will be non-empty.</p>
+<p>There will be no control characters, single quote, or double quote characters. For example, source = “string s = “/<em> Not a comment. </em>/“;” will not be a test case. (Also, nothing else such as defines or macros will interfere with the comments.)</p>
+<p>It is guaranteed that every open block comment will eventually be closed, so /* outside of a line or block comment always starts a new comment.</p>
+<p>Finally, implicit newline characters can be deleted by block comments. Please see the examples below for details.</p>
+<p>After removing the comments from the source code, return the source code in the same format.</p>
+<p>Example 1:</p>
+<p>Input:<br>source = [“/<em>Test program </em>/“, “int main()”, “{ “, “  // variable declaration “, “int a, b, c;”, “/<em> This is a test”, “   multiline  “, “   comment for “, “   testing </em>/“, “a = b + c;”, “}”]</p>
+<p>The line by line code is visualized as below:<br>/<em>Test program </em>/<br>int main()<br>{<br>  // variable declaration<br>int a, b, c;<br>/<em> This is a test<br>   multiline<br>   comment for<br>   testing </em>/<br>a = b + c;<br>}</p>
+<p>Output: [“int main()”,”{ “,”  “,”int a, b, c;”,”a = b + c;”,”}”]</p>
+<p>The line by line code is visualized as below:<br>int main()<br>{ </p>
+<p>int a, b, c;<br>a = b + c;<br>}</p>
+<p>Explanation:<br>The string<br>/*<br> denotes a block comment, including line 1 and lines 6-9. The string<br>//<br> denotes line 4 as comments.</p>
+<p>Example 2:</p>
+<p>Input:<br>source = [“a/<em>comment”, “line”, “more_comment</em>/b”]<br>Output: [“ab”]<br>Explanation: The original source string is “a/<em>comment\nline\nmore_comment</em>/b”, where we have bolded the newline characters.  After deletion, the implicit newline characters are deleted, leaving the string “ab”, which when delimited by newline characters becomes [“ab”].</p>
+<p>Note:<br>The length of source is in the range [1, 100].<br>The length of source[i] is in the range [0, 80].<br>Every open block comment is eventually closed.<br>There are no single-quote, double-quote, or control characters in the source code.</p>
+</blockquote></p>
+<p>从题目的描述中我们可以看到，这个题目就是希望我们能实现一个算法把我们程序代码中的注释给去掉，有以下几点要求：</p>
+<ul>
+<li>同一行中“//”后面的内容全部忽略。</li>
+<li>块注释”/<em> … </em>/“中的内容全部忽略，并且要拼接块注释前后的内容，块注释可跨行。</li>
+<li>块注释和行注释优先级相同，即忽略块注释中的行注释标记”//“，以及行注释中的块注释标记”/<em>“和”</em>/“</li>
+<li>删除去除注释后的空行。</li>
+</ul>
+<p>根据以上的约束条件，我们可以设计一下我们的基本思路，</p>
+<ul>
+<li>首先，如果检测到行注释标记“//”，并且此时不在块注释内，我们可以不在处理本行的其他内容。</li>
+<li>其次，如果我们检测到块注释标记开始”/*”，并且此时不在块注释内，我们可以标记之后的内容均是在块注释内。</li>
+<li>再次，如果我们检测到块注释标记开始”/*”，并且此时在块注释内，我们将标记其后的内容均不在块注释内。</li>
+<li>对于不在块注释内的内容，我们将拼接为独立的行。</li>
+</ul>
+<p>基于以上的思路，我们就可以开始coding啦。<br><figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div><div class="line">66</div><div class="line">67</div><div class="line">68</div><div class="line">69</div><div class="line">70</div><div class="line">71</div><div class="line">72</div><div class="line">73</div><div class="line">74</div><div class="line">75</div><div class="line">76</div><div class="line">77</div><div class="line">78</div><div class="line">79</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">"stdio.h"</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">"stdlib.h"</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">"string.h"</span></span></div><div class="line"></div><div class="line"><span class="comment">/**</span></div><div class="line"><span class="comment"> * Return an array of size *returnSize.</span></div><div class="line"><span class="comment"> * Note: The returned array must be malloced, assume caller calls free().</span></div><div class="line"><span class="comment"> */</span></div><div class="line"><span class="function"><span class="keyword">char</span>** <span class="title">removeComments</span><span class="params">(<span class="keyword">char</span>** source, <span class="keyword">int</span> sourceSize, <span class="keyword">int</span>* returnSize)</span> </span></div><div class="line"><span class="function"></span>&#123;</div><div class="line">	<span class="keyword">int</span> i, j, len, k=<span class="number">0</span>, block=<span class="number">0</span>, n=<span class="number">0</span>;</div><div class="line">	<span class="keyword">char</span> *tmp=<span class="built_in">calloc</span>(<span class="number">101</span>, <span class="keyword">sizeof</span>(<span class="keyword">char</span>)), *p, *t;</div><div class="line">	<span class="keyword">char</span> **ret=<span class="built_in">malloc</span>(<span class="number">101</span>*<span class="keyword">sizeof</span>(<span class="keyword">char</span> *));</div><div class="line">	<span class="keyword">for</span>(i=<span class="number">0</span>; i&lt;sourceSize; i++)</div><div class="line">	&#123;</div><div class="line">		len = <span class="built_in">strlen</span>(source[i]);</div><div class="line">		p = source[i];</div><div class="line">		<span class="keyword">if</span>(block == <span class="number">0</span>)	k=<span class="number">0</span>;</div><div class="line">		<span class="keyword">for</span>(j=<span class="number">0</span>; j&lt;len; j++)</div><div class="line">		&#123;</div><div class="line">			<span class="keyword">if</span>(p[j]==<span class="string">'/'</span> &amp;&amp; block==<span class="number">0</span>)</div><div class="line">			&#123;</div><div class="line">				<span class="keyword">if</span>(j+<span class="number">1</span>&lt;len &amp;&amp; p[j+<span class="number">1</span>] == <span class="string">'/'</span>)</div><div class="line">				&#123;</div><div class="line">					<span class="keyword">break</span>;</div><div class="line">				&#125;</div><div class="line">				<span class="keyword">else</span> <span class="keyword">if</span>(j+<span class="number">1</span>&lt;len &amp;&amp; p[j+<span class="number">1</span>]==<span class="string">'*'</span>)</div><div class="line">				&#123;</div><div class="line">					block=<span class="number">1</span>;</div><div class="line">					j+=<span class="number">1</span>;</div><div class="line">					<span class="keyword">continue</span>;</div><div class="line">				&#125;</div><div class="line">			&#125;</div><div class="line">			<span class="keyword">if</span>(block==<span class="number">1</span> &amp;&amp; p[j] == <span class="string">'*'</span>)</div><div class="line">			&#123;</div><div class="line">				<span class="keyword">if</span>(j+<span class="number">1</span> &lt; len &amp;&amp; p[j+<span class="number">1</span>] == <span class="string">'/'</span>)</div><div class="line">				&#123;</div><div class="line">					block=<span class="number">0</span>;</div><div class="line">					j+=<span class="number">1</span>;</div><div class="line">					<span class="keyword">continue</span>;</div><div class="line">				&#125;</div><div class="line">			&#125;</div><div class="line">			<span class="keyword">if</span>(block == <span class="number">0</span>)	tmp[k++] = p[j];</div><div class="line">		&#125;</div><div class="line">		<span class="keyword">if</span>(block == <span class="number">0</span>)</div><div class="line">		&#123;</div><div class="line">			tmp[k++]=<span class="string">'\0'</span>;</div><div class="line">			<span class="keyword">if</span>(<span class="built_in">strlen</span>(tmp) &gt; <span class="number">0</span>)</div><div class="line">			&#123;</div><div class="line">				t=<span class="built_in">calloc</span>(<span class="built_in">strlen</span>(tmp)+<span class="number">1</span>, <span class="keyword">sizeof</span>(<span class="keyword">char</span>));</div><div class="line">				<span class="built_in">memcpy</span>(t, tmp, <span class="built_in">strlen</span>(tmp));</div><div class="line">				ret[n++] = t;</div><div class="line">			&#125;</div><div class="line">		&#125;</div><div class="line">	&#125;</div><div class="line"></div><div class="line">	*returnSize = n;</div><div class="line"></div><div class="line">	<span class="keyword">return</span> ret;</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">(<span class="keyword">int</span> argc, <span class="keyword">char</span>** argv)</span></span></div><div class="line"><span class="function"></span>&#123;</div><div class="line">	<span class="keyword">char</span> *source[]=&#123;<span class="string">"/*Test program */"</span>, <span class="string">"int main()"</span>, <span class="string">"&#123; "</span>, <span class="string">"  // variable declaration "</span>, <span class="string">"int a, b, c;"</span>, <span class="string">"/* This is a test"</span>, <span class="string">"   multiline  "</span>, <span class="string">"   comment for "</span>, <span class="string">"   testing */"</span>, <span class="string">"a = b + c;"</span>, <span class="string">"&#125;"</span>&#125;;</div><div class="line">	<span class="keyword">int</span> sourceSize=<span class="number">11</span>,returnSize=<span class="number">0</span>,i;</div><div class="line">	<span class="keyword">char</span> ** ret;</div><div class="line"></div><div class="line">	ret = removeComments(source, sourceSize, &amp;returnSize);</div><div class="line">	</div><div class="line">	<span class="built_in">printf</span>(<span class="string">"["</span>);</div><div class="line">	<span class="keyword">for</span>(i=<span class="number">0</span>; i&lt;returnSize; i++)</div><div class="line">	&#123;</div><div class="line">		<span class="built_in">printf</span>(<span class="string">"\"%s\""</span>, ret[i]);</div><div class="line">		<span class="keyword">if</span>(i!=returnSize<span class="number">-1</span>)	<span class="built_in">printf</span>(<span class="string">", "</span>);</div><div class="line">	&#125;</div><div class="line"></div><div class="line">	<span class="built_in">printf</span>(<span class="string">"]\n"</span>);</div><div class="line">&#125;</div><div class="line"></div></pre></td></tr></table></figure></p>
 
-        <div class="article-info info-on-right">
-          
+      
+
+      
+        <div class="page-reward">
+          <a href="javascript:;" class="page-reward-btn tooltip-top">
+            <div class="tooltip tooltip-east">
+            <span class="tooltip-item">
+              赏
+            </span>
+            <span class="tooltip-content">
+              <span class="tooltip-text">
+                <span class="tooltip-inner">
+                  <p class="reward-p"><i class="icon icon-quo-left"></i>谢谢你请我吃糖果<i class="icon icon-quo-right"></i></p>
+                  <div class="reward-box">
+                    
+                    
+                  </div>
+                </span>
+              </span>
+            </span>
+          </div>
+          </a>
+        </div>
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
 	<div class="article-tag tagcloud">
 		<i class="icon-price-tags icon"></i>
 		<ul class="article-tag-list">
@@ -197,61 +254,106 @@
 		</ul>
 	</div>
 
-          
+      
 
+      
+
+      
+        
+<div class="share-btn share-icons tooltip-left">
+  <div class="tooltip tooltip-east">
+    <span class="tooltip-item">
+      <a href="javascript:;" class="share-sns share-outer">
+        <i class="icon icon-share"></i>
+      </a>
+    </span>
+    <span class="tooltip-content">
+      <div class="share-wrap">
+        <div class="share-icons">
+          <a class="weibo share-sns" href="javascript:;" data-type="weibo">
+            <i class="icon icon-weibo"></i>
+          </a>
+          <a class="weixin share-sns wxFab" href="javascript:;" data-type="weixin">
+            <i class="icon icon-weixin"></i>
+          </a>
+          <a class="qq share-sns" href="javascript:;" data-type="qq">
+            <i class="icon icon-qq"></i>
+          </a>
+          <a class="douban share-sns" href="javascript:;" data-type="douban">
+            <i class="icon icon-douban"></i>
+          </a>
+          <a class="qzone share-sns" href="javascript:;" data-type="qzone">
+            <i class="icon icon-qzone"></i>
+          </a>
+          <a class="facebook share-sns" href="javascript:;" data-type="facebook">
+            <i class="icon icon-facebook"></i>
+          </a>
+          <a class="twitter share-sns" href="javascript:;" data-type="twitter">
+            <i class="icon icon-twitter"></i>
+          </a>
+          <a class="google share-sns" href="javascript:;" data-type="google">
+            <i class="icon icon-google"></i>
+          </a>
         </div>
-        <div class="clearfix"></div>
-    </header>
+      </div>
+    </span>
+  </div>
+</div>
+
+<div class="page-modal wx-share js-wx-box">
+    <a class="close js-modal-close" href="javascript:;"><i class="icon icon-close"></i></a>
+    <p>扫一扫，分享到微信</p>
+    <div class="wx-qrcode">
+      <img src="http://s.jiathis.com/qrcode.php?url=http://suckor.github.io/2017/11/21/leetcode-algorithms-2-Remove-Comments-Medium/" alt="微信分享二维码">
+    </div>
+</div>
+
+<div class="mask js-mask"></div>
+      
+      <div class="clearfix"></div>
+    </div>
   </div>
 </article>
+
   
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2017/11/16/leetcode-algorithms-1-split-list-to-parts-middle/" class="archive-article-date">
-  	<time datetime="2017-11-16T09:12:06.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2017-11-16</time>
-</a>
+<nav id="article-nav">
+  
+  
+    <a href="/2017/11/16/leetcode-algorithms-1-split-list-to-parts-middle/" id="article-nav-older" class="article-nav-link-wrap">
+      <div class="article-nav-title">leetcode algorithms(1)---split list to parts(Medium)</div>
+      <i class="icon-circle-right"></i>
+    </a>
+  
+</nav>
+
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
         </div>
-    	 
+        
+        
+    </div>
+</aside>
+
+
+
   
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2017/11/16/leetcode-algorithms-1-split-list-to-parts-middle/">leetcode algorithms(1)---split list to parts(Medium)</a>
-    </h1>
+  
   
 
-        <div class="article-info info-on-right">
-          
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">leetcode</a>
-        		</li>
-      		 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">algorithm</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-          
-
-        </div>
-        <div class="clearfix"></div>
-    </header>
-  </div>
-</article>
-  
-  
-    </div></section>
   
 
-    
+  
+
+  
 
 
           </div>
@@ -275,9 +377,9 @@
 	var yiliaConfig = {
 		mathjax: true,
 		isHome: false,
-		isPost: false,
+		isPost: true,
 		isArchive: false,
-		isTag: true,
+		isTag: false,
 		isCategory: false,
 		open_in_new: false,
 		toc_hide_index: true,
